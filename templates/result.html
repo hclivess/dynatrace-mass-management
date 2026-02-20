@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Operation Results{% end %}
+{% block page_title %}Operation Results{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        {% if isinstance(data, dict) and "error" in data %}
+        <div class="alert alert-danger mb-3">
+            <strong>Error:</strong> {{ data["error"] }}
+        </div>
+        {% end %}
+
+        {% if isinstance(data, dict) and data.get("success") == True %}
+        <div class="alert alert-success mb-3">Operation completed successfully.</div>
+        {% end %}
+
+        {% if isinstance(data, dict) %}
+            {% for key, value in data.items() %}
+                {% if key == "error" or key == "success" %}
+                    {% continue %}
+                {% end %}
+
+                {% if isinstance(value, list) and value %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">{{ key.replace("_", " ") }}</h6>
+                    {% for item in value %}
+                    <span class="badge bg-primary me-1 mb-1">{{ item }}</span>
+                    {% end %}
+                </div>
+                {% elif isinstance(value, dict) and value %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">{{ key.replace("_", " ") }}</h6>
+                    <table class="table table-sm table-hover mb-0">
+                        <tbody>
+                            {% for k, v in value.items() %}
+                            <tr>
+                                <td style="width:40%"><code>{{ k }}</code></td>
+                                <td>
+                                    {% if isinstance(v, dict) %}
+                                        {% if v.get("success") == True %}
+                                            <span class="badge bg-success">OK</span>
+                                        {% elif v.get("success") == False %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% end %}
+                                        {% if v.get("status") %}
+                                            <span class="text-muted small ms-1">HTTP {{ v["status"] }}</span>
+                                        {% end %}
+                                    {% elif isinstance(v, bool) %}
+                                        {% if v %}
+                                            <span class="badge bg-success">✓</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">✗</span>
+                                        {% end %}
+                                    {% elif v == "OK" %}
+                                        <span class="badge bg-success">OK</span>
+                                    {% elif isinstance(v, int) and 200 <= v < 300 %}
+                                        <span class="badge bg-success">{{ v }}</span>
+                                    {% elif isinstance(v, int) and v >= 400 %}
+                                        <span class="badge bg-danger">{{ v }}</span>
+                                    {% else %}
+                                        {{ v }}
+                                    {% end %}
+                                </td>
+                            </tr>
+                            {% end %}
+                        </tbody>
+                    </table>
+                </div>
+                {% elif isinstance(value, list) and not value %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">{{ key.replace("_", " ") }}</h6>
+                    <span class="text-muted">None</span>
+                </div>
+                {% elif key == "status" and isinstance(value, int) %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">HTTP Status</h6>
+                    {% if 200 <= value < 300 %}
+                        <span class="badge bg-success fs-6">{{ value }}</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">{{ value }}</span>
+                    {% end %}
+                </div>
+                {% elif key == "result" and isinstance(value, int) %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">Result</h6>
+                    {% if 200 <= value < 300 %}
+                        <span class="badge bg-success fs-6">HTTP {{ value }}</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-6">HTTP {{ value }}</span>
+                    {% end %}
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    <h6 class="text-muted text-uppercase small">{{ key.replace("_", " ") }}</h6>
+                    <span>{{ value }}</span>
+                </div>
+                {% end %}
+            {% end %}
+        {% elif isinstance(data, str) %}
+        <pre class="json">{{ data }}</pre>
+        {% else %}
+        <pre class="json">{{ data }}</pre>
+        {% end %}
+    </div>
+</div>
+{% end %}

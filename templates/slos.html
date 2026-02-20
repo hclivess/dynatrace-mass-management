@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}SLOs{% end %}
+{% block page_title %}Service Level Objectives{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} SLOs</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">SLOs</span>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createSLO">+ Create SLO</button>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th class="text-end">Target</th>
+                    <th class="text-end">Warning</th>
+                    <th class="text-end">Current</th>
+                    <th>Error Budget</th>
+                    <th>Filter</th>
+                    <th style="width:80px" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in data %}
+                {% set pct = s.get("evaluatedPercentage") %}
+                {% set target = s.get("target", 0) %}
+                {% set warning = s.get("warning", 0) %}
+                <tr>
+                    <td>
+                        <strong>{{ s.get("name", "") }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ (s.get("id") or "")[:20] }}…</div>
+                    </td>
+                    <td>
+                        {% set st = s.get("status", "") %}
+                        <span class="badge {% if st == "SUCCESS" %}bg-success{% elif st == "WARNING" %}bg-warning text-dark{% else %}bg-danger{% end %}">{{ st }}</span>
+                    </td>
+                    <td class="text-end font-monospace">{{ target }}%</td>
+                    <td class="text-end font-monospace">{{ warning }}%</td>
+                    <td class="text-end">
+                        {% if pct is not None %}
+                            {% set color = "success" if pct >= target else ("warning" if pct >= warning else "danger") %}
+                            <span class="badge bg-{{ color }}">{{ "%.2f" % pct }}%</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% set budget = s.get("errorBudget") %}
+                        {% if budget is not None %}
+                            <div class="progress" style="height:16px; min-width:80px;">
+                                {% set remaining = max(0, min(100, budget)) %}
+                                <div class="progress-bar {% if remaining > 50 %}bg-success{% elif remaining > 20 %}bg-warning{% else %}bg-danger{% end %}"
+                                     style="width:{{ remaining }}%">{{ "%.1f" % budget }}%</div>
+                            </div>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% end %}
+                    </td>
+                    <td class="small text-muted" style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                        title="{{ s.get('filter', '') }}">{{ s.get("filter", "") }}</td>
+                    <td class="text-end">
+                        <form method="post" action="/delete_slo">
+                            <input type="hidden" name="slo_id" value="{{ s.get('id','') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete SLO: {{ s.get('name','') }}?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No SLOs configured.</p></div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="createSLO">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Create SLO (JSON)</div>
+        <div class="card-body">
+            <form method="post" action="/create_slo">
+                <textarea name="config" class="form-control font-monospace mb-3" rows="10" placeholder='{ "name": "Service Availability", "metricExpression": "...", "target": 99.5, "warning": 99.8, "timeframe": "-1M" }'></textarea>
+                <div class="form-text mb-3"><a href="https://docs.dynatrace.com/docs/platform/davis-ai/slo" target="_blank">SLO documentation ↗</a></div>
+                <button type="submit" class="btn btn-primary">Create SLO</button>
+                <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#createSLO">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

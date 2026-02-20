@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}User Account Management{% end %}
+{% block page_title %}User Account Management{% end %}
+
+{% block content %}
+<div class="row">
+    <!-- ADD USERS -->
+    <div class="col-lg-7">
+        <div class="card border-primary">
+            <div class="card-header fw-bold text-primary">Add Users</div>
+            <div class="card-body">
+                <form method="post" action="/add_users">
+                    <div class="mb-3">
+                        <label for="add_emails" class="form-label">Email addresses</label>
+                        <textarea class="form-control" id="add_emails" name="emails" rows="3"
+                                  placeholder="user@company.com, another@company.com"></textarea>
+                        <div class="form-text">Paste any text — email addresses will be extracted automatically.</div>
+                    </div>
+
+                    {% if groups %}
+                    <label class="form-label">Assign to groups (optional)</label>
+                    <div class="row row-cols-1 row-cols-md-2 g-2 mb-3">
+                        {% for group in groups %}
+                        <div class="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="group"
+                                       value="{{ group['uuid'] }}" id="grp_{{ group['uuid'] }}">
+                                <label class="form-check-label" for="grp_{{ group['uuid'] }}">
+                                    {{ group["name"] }}
+                                    <span class="text-muted small d-block" style="font-size:.75rem">{{ group["uuid"][:12] }}…</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% end %}
+                    </div>
+                    {% end %}
+
+                    <button type="submit" class="btn btn-primary">Add &amp; Assign Users</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE USERS -->
+    <div class="col-lg-5">
+        <div class="card border-danger">
+            <div class="card-header fw-bold text-danger">Delete Users</div>
+            <div class="card-body">
+                <form method="post" action="/delete_users">
+                    <div class="mb-3">
+                        <label for="del_emails" class="form-label">Email addresses</label>
+                        <textarea class="form-control" id="del_emails" name="emails" rows="3"
+                                  placeholder="user@company.com"></textarea>
+                        <div class="form-text">Paste any text — email addresses will be extracted automatically.</div>
+                    </div>
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('This will remove the listed users from the account. Continue?')">
+                        Delete Users
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% if groups %}
+        <div class="card mt-3">
+            <div class="card-header fw-bold">Available Groups</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Group</th><th>UUID</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups %}
+                        <tr>
+                            <td>{{ group["name"] }}</td>
+                            <td><code style="font-size:.75rem">{{ group["uuid"] }}</code></td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% end %}
+    </div>
+</div>
+{% end %}

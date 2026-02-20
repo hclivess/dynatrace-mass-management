@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Releases{% end %}
+{% block page_title %}Software Releases{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} releases</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Releases</span>
+        <div class="btn-group btn-group-sm">
+            <a href="/releases?range=now-7d" class="btn btn-outline-secondary {% if time_range == 'now-7d' %}active{% end %}">7d</a>
+            <a href="/releases?range=now-30d" class="btn btn-outline-secondary {% if time_range == 'now-30d' %}active{% end %}">30d</a>
+            <a href="/releases?range=now-90d" class="btn btn-outline-secondary {% if time_range == 'now-90d' %}active{% end %}">90d</a>
+        </div>
+    </div>
+
+    <!-- Stage summary -->
+    {% if data %}
+    <div class="card-body py-2 border-bottom">
+        {% set stages = {} %}
+        {% for r in data %}
+            {% set stage = r.get("releaseStage", r.get("stage", "UNKNOWN")) %}
+            {% if stage not in stages %}
+                {% set _ = stages.__setitem__(stage, 0) %}
+            {% end %}
+            {% set _ = stages.__setitem__(stage, stages[stage] + 1) %}
+        {% end %}
+        {% for stage, count in sorted(stages.items()) %}
+            <span class="badge {% if stage == 'PRODUCTION' %}bg-success{% elif stage == 'STAGING' %}bg-warning text-dark{% elif stage == 'PRE_PRODUCTION' %}bg-info text-dark{% else %}bg-secondary{% end %} me-2">
+                {{ stage }}: {{ count }}
+            </span>
+        {% end %}
+    </div>
+    {% end %}
+
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Version</th>
+                    <th>Stage</th>
+                    <th>Product</th>
+                    <th class="text-center">Instances</th>
+                    <th>Entity ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in data %}
+                <tr>
+                    <td><strong>{{ r.get("releaseName", r.get("name", "")) }}</strong></td>
+                    <td><code>{{ r.get("releaseVersion", r.get("version", "")) }}</code></td>
+                    <td>
+                        {% set stage = r.get("releaseStage", r.get("stage", "")) %}
+                        <span class="badge {% if stage == 'PRODUCTION' %}bg-success{% elif stage == 'STAGING' %}bg-warning text-dark{% elif stage == 'PRE_PRODUCTION' %}bg-info text-dark{% else %}bg-secondary{% end %}">{{ stage }}</span>
+                    </td>
+                    <td>{{ r.get("releaseProduct", r.get("product", "")) }}</td>
+                    <td class="text-center">
+                        {% set inst = r.get("instances") %}
+                        {% if inst is not None %}
+                            <span class="badge bg-primary">{{ inst }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% end %}
+                    </td>
+                    <td><code style="font-size:.7rem">{{ (r.get("entityId") or "")[:30] }}</code></td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No release data in selected time range.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

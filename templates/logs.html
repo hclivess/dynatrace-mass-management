@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Log Search{% end %}
+{% block page_title %}Log Search{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header fw-bold">Search Logs</div>
+    <div class="card-body">
+        <form method="get" action="/logs">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-7">
+                    <label class="form-label">DQL Query</label>
+                    <input type="text" class="form-control font-monospace" name="query"
+                           placeholder='status="ERROR" AND content="OutOfMemory"'>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Time Range</label>
+                    <select name="range" class="form-select">
+                        <option value="now-1h">Last 1 hour</option>
+                        <option value="now-2h" selected>Last 2 hours</option>
+                        <option value="now-6h">Last 6 hours</option>
+                        <option value="now-24h">Last 24 hours</option>
+                        <option value="now-7d">Last 7 days</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+        <div class="form-text mt-2">
+            Uses the <a href="https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2" target="_blank">Log Monitoring v2 API ↗</a>.
+            For Grail-based log management, use Dynatrace Notebooks directly.
+        </div>
+    </div>
+</div>
+
+{% if data %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Results</span>
+        <span class="badge bg-secondary badge-count">{{ len(data) }} records</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0" style="font-size:.85rem">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                    <th>Host</th>
+                    <th>Service</th>
+                    <th>Content</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in data %}
+                <tr>
+                    <td class="text-nowrap">{{ convert_ts(log.get("timestamp", 0)) }}</td>
+                    <td>
+                        {% set st = str(log.get("status", log.get("loglevel", ""))).upper() %}
+                        {% if "ERROR" in st %}
+                            <span class="badge bg-danger">{{ st }}</span>
+                        {% elif "WARN" in st %}
+                            <span class="badge bg-warning text-dark">{{ st }}</span>
+                        {% elif "INFO" in st %}
+                            <span class="badge bg-info text-dark">{{ st }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ st }}</span>
+                        {% end %}
+                    </td>
+                    <td class="small">{{ log.get("dt.entity.host", log.get("host.name", "")) }}</td>
+                    <td class="small">{{ log.get("dt.entity.process_group_instance", log.get("service.name", "")) }}</td>
+                    <td style="max-width:400px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                        title="{{ log.get('content', '') }}">
+                        {{ (log.get("content") or "")[:200] }}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif data is not None %}
+<div class="card">
+    <div class="card-body text-muted">Enter a query above to search logs.</div>
+</div>
+{% end %}
+{% end %}

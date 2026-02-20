@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Extensions 2.0{% end %}
+{% block page_title %}Extensions 2.0{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} extensions</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Extensions 2.0</span>
+        <span class="badge bg-secondary badge-count">{{ len(data) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Extension Name</th>
+                    <th>Version</th>
+                    <th>Author</th>
+                    <th>Min DT Version</th>
+                    <th style="width:230px" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ext in data %}
+                <tr>
+                    <td><strong>{{ ext.get("extensionName", "") }}</strong></td>
+                    <td><code>{{ ext.get("version", "") }}</code></td>
+                    <td>{{ ext.get("author", {}).get("name", "") if isinstance(ext.get("author"), dict) else ext.get("author", "") }}</td>
+                    <td>{{ ext.get("minDynatraceVersion", "") }}</td>
+                    <td class="text-end">
+                        <div class="action-btns justify-content-end">
+                            <a href="/extension_configs?name={{ ext.get('extensionName','') }}" class="btn btn-sm btn-outline-info">Configs</a>
+                            <a href="/extension_schema?name={{ ext.get('extensionName','') }}&version={{ ext.get('version','') }}" class="btn btn-sm btn-outline-secondary">Schema</a>
+                            <form method="post" action="/delete_extension">
+                                <input type="hidden" name="name" value="{{ ext.get('extensionName','') }}">
+                                <input type="hidden" name="version" value="{{ ext.get('version','') }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Delete {{ ext.get('extensionName','') }} v{{ ext.get('version','') }}?')">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No Extensions 2.0 installed.</p></div>
+        {% end %}
+    </div>
+</div>
+
+{% if configs is not None %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Monitoring Configs: <code>{{ ext_name }}</code></span>
+        <span class="badge bg-secondary badge-count">{{ len(configs) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if configs %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Config ID</th><th>Scope</th><th>Version</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+                {% for cfg in configs %}
+                <tr>
+                    <td><code style="font-size:.75rem">{{ cfg.get("objectId", cfg.get("configurationId", "")) }}</code></td>
+                    <td><span class="badge bg-light text-dark">{{ cfg.get("scope", "") }}</span></td>
+                    <td>{{ cfg.get("version", "") }}</td>
+                    <td><details><summary class="small text-muted">Show JSON</summary><pre class="mt-1 mb-0" style="font-size:.75rem; max-height:200px; overflow:auto;">{{ json_encode(cfg.get("value", {})) }}</pre></details></td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No monitoring configurations for this extension.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}
+
+{% if schema is not None %}
+<div class="card">
+    <div class="card-header fw-bold">Schema: <code>{{ ext_name }} v{{ ext_version }}</code></div>
+    <div class="card-body"><pre style="max-height:500px; overflow:auto; font-size:.8rem;">{{ json_encode(schema) }}</pre></div>
+</div>
+{% end %}
+{% end %}

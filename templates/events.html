@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Events{% end %}
+{% block page_title %}Davis Events{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} events</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Events</span>
+        <div>
+            <div class="btn-group btn-group-sm me-2">
+                <a href="/events?range=now-2h" class="btn btn-outline-secondary">2h</a>
+                <a href="/events?range=now-24h" class="btn btn-outline-secondary">24h</a>
+                <a href="/events?range=now-7d" class="btn btn-outline-secondary">7d</a>
+            </div>
+            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#ingestForm">
+                + Ingest Event
+            </button>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Entity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in data %}
+                <tr>
+                    <td><strong>{{ (e.get("title") or "")[:80] }}</strong></td>
+                    <td><span class="badge bg-info text-dark">{{ e.get("eventType", "") }}</span></td>
+                    <td>
+                        {% set st = e.get("status", "") %}
+                        {% if st == "OPEN" %}
+                            <span class="badge bg-danger">OPEN</span>
+                        {% elif st == "CLOSED" %}
+                            <span class="badge bg-success">CLOSED</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ st }}</span>
+                        {% end %}
+                    </td>
+                    <td class="small text-nowrap">{{ convert_ts(e.get("startTime", 0)) }}</td>
+                    <td class="small text-nowrap">{{ convert_ts(e.get("endTime", 0)) if e.get("endTime", -1) != -1 else "—" }}</td>
+                    <td><code style="font-size:.75rem">{{ (e.get("entityId") or "")[:30] }}</code></td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3">
+            <p class="text-muted mb-0">No events in selected time range.</p>
+        </div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="ingestForm">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Ingest Custom Event</div>
+        <div class="card-body">
+            <form method="post" action="/ingest_event">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Event Type</label>
+                        <select name="event_type" class="form-select">
+                            <option value="CUSTOM_INFO">CUSTOM_INFO</option>
+                            <option value="CUSTOM_ALERT">CUSTOM_ALERT</option>
+                            <option value="CUSTOM_ANNOTATION">CUSTOM_ANNOTATION</option>
+                            <option value="CUSTOM_CONFIGURATION">CUSTOM_CONFIGURATION</option>
+                            <option value="CUSTOM_DEPLOYMENT">CUSTOM_DEPLOYMENT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" placeholder="Deployment v2.5.1 to production" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Entity Selector <span class="text-muted">(optional)</span></label>
+                        <input type="text" name="entity_selector" class="form-control font-monospace"
+                               placeholder='type("HOST"),entityName.equals("myhost")'>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Properties JSON <span class="text-muted">(optional)</span></label>
+                        <input type="text" name="properties" class="form-control font-monospace"
+                               placeholder='{"version":"2.5.1","team":"platform"}' value="{}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Ingest Event</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#ingestForm">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

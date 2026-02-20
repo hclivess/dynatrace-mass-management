@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Portal{% end %}
+{% block page_title %}Portal{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- Overview card -->
+    <div class="col-12">
+        <a href="/overview" class="card text-decoration-none border-primary" style="border-width:2px;">
+            <div class="card-body d-flex align-items-center py-3">
+                <span style="font-size:1.8rem" class="me-3">📊</span>
+                <div>
+                    <h5 class="mb-0 text-primary">Environment Overview</h5>
+                    <span class="text-muted small">Health summary, KPIs, problem/SLO/security breakdown</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Environment -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">🖥 Environment</div>
+            <div class="list-group list-group-flush">
+                <a href="/" class="list-group-item list-group-item-action text-danger fw-bold">⟲ Switch Tenant</a>
+                <a href="/tenant_details" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Tenant Details <span class="text-muted small">connection info</span>
+                </a>
+                <a href="/hosts" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Hosts &amp; Host Groups <span class="text-muted small">enable/disable</span>
+                </a>
+                <a href="/activegates" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    ActiveGates <span class="text-muted small">modules, auto-update</span>
+                </a>
+                <a href="/network_zones" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Network Zones <span class="text-muted small">create/delete</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- User & Access -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">👤 User &amp; Access</div>
+            <div class="list-group list-group-flush">
+                <a href="/accounts" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Accounts &amp; Groups <span class="text-muted small">add/remove users</span>
+                </a>
+                <a href="/tokens" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    API Tokens <span class="text-muted small">create/browse</span>
+                </a>
+                <a href="/audit_log" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Audit Log <span class="text-muted small">filter, time range</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">⚙ Configuration</div>
+            <div class="list-group list-group-flush">
+                <a href="/tags" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Custom Host Tags <span class="text-muted small">add/remove</span>
+                </a>
+                <a href="/auto_tags" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Auto-Tag Rules <span class="text-muted small">view/delete/import</span>
+                </a>
+                <a href="/request_names" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Request Naming <span class="text-muted small">add/delete</span>
+                </a>
+                <a href="/settings" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Settings 2.0 <span class="text-muted small">browse objects</span>
+                </a>
+                <a href="/maintenance" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Maintenance Windows <span class="text-muted small">create/delete</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitoring -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">📈 Monitoring Data</div>
+            <div class="list-group list-group-flush">
+                <a href="/entities" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Entities <span class="text-muted small">query by selector</span>
+                </a>
+                <a href="/problems" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Problems <span class="text-muted small">view/close</span>
+                </a>
+                <a href="/events" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Events <span class="text-muted small">view &amp; ingest</span>
+                </a>
+                <a href="/metrics" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Metrics <span class="text-muted small">browse &amp; query</span>
+                </a>
+                <a href="/logs" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Log Search <span class="text-muted small">DQL query</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality & Security -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">🛡 Quality &amp; Security</div>
+            <div class="list-group list-group-flush">
+                <a href="/slos" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    SLOs <span class="text-muted small">create/delete</span>
+                </a>
+                <a href="/security" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Security Problems <span class="text-muted small">view/mute</span>
+                </a>
+                <a href="/synthetic" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Synthetic Monitors <span class="text-muted small">enable/disable</span>
+                </a>
+                <a href="/releases" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Releases <span class="text-muted small">time range filter</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extensions & Dashboards -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">📋 Dashboards &amp; Extensions</div>
+            <div class="list-group list-group-flush">
+                <a href="/dashboards" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Dashboards <span class="text-muted small">export/delete</span>
+                </a>
+                <a href="/extensions" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    Extensions 2.0 <span class="text-muted small">configs/delete</span>
+                </a>
+            </div>
+            <div class="card-footer bg-transparent border-top-0">
+                <a href="/about" class="text-muted small">About DMM</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+{% block nav_buttons %}
+<a href="/" class="btn btn-outline-danger">← Switch Tenant</a>
+{% end %}

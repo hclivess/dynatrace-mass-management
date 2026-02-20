@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Hosts{% end %}
+{% block page_title %}Hosts{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} hosts</small>{% end %}
+
+{% block content %}
+{% if host_groups %}
+<div class="card">
+    <div class="card-header fw-bold">Host Group Operations</div>
+    <div class="card-body">
+        <div class="alert alert-warning py-2 mb-3 small">
+            ⚠ Verify you are not enabling hosts that were intentionally disabled.
+        </div>
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>Host Group</th><th style="width:220px" class="text-end">Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for item in host_groups %}
+                <tr>
+                    <td class="fw-bold">{{ item.get("name", "Unknown") }}</td>
+                    <td class="text-end">
+                        <div class="action-btns justify-content-end">
+                            <form method="post" action="/enable_hosts">
+                                <input type="hidden" name="host_group" value="{{ item['meId'] }}">
+                                <button type="submit" class="btn btn-sm btn-outline-success"
+                                        onclick="return confirm('Enable all hosts in {{ item.get('name','this group') }}?')">Enable All</button>
+                            </form>
+                            <form method="post" action="/disable_hosts">
+                                <input type="hidden" name="host_group" value="{{ item['meId'] }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Disable all hosts in {{ item.get('name','this group') }}?')">Disable All</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Hosts</span>
+        <span class="badge bg-secondary badge-count">{{ len(data) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Display Name</th>
+                    <th>Entity ID</th>
+                    <th class="text-center">Host Units</th>
+                    <th>Host Group</th>
+                    <th>Tags</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                {% set info = item.get("hostInfo", {}) %}
+                <tr>
+                    <td><strong>{{ info.get("displayName", "") }}</strong></td>
+                    <td><code style="font-size:.75rem">{{ info.get("entityId", "") }}</code></td>
+                    <td class="text-center">{{ info.get("consumedHostUnits", "—") }}</td>
+                    <td>
+                        {% try %}
+                            <span class="badge bg-light text-dark">{{ info["hostGroup"]["name"] }}</span>
+                        {% except %}
+                            <span class="text-muted">—</span>
+                        {% end %}
+                    </td>
+                    <td style="max-width:220px; overflow:hidden;">
+                        {% for tag in info.get("tags", [])[:4] %}
+                            <span class="badge bg-info text-dark me-1">{{ tag.get("key", "") }}{% if tag.get("value") %}:{{ tag["value"] }}{% end %}</span>
+                        {% end %}
+                        {% if len(info.get("tags", [])) > 4 %}
+                            <span class="text-muted small">+{{ len(info["tags"]) - 4 }}</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No hosts found.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

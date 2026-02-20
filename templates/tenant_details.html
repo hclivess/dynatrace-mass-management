@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Tenant Details{% end %}
+{% block page_title %}Tenant Details{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        {% if isinstance(data, dict) %}
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in data.items() %}
+                <tr>
+                    <td><strong>{{ key }}</strong></td>
+                    <td>
+                        {% if isinstance(value, list) %}
+                            {% for v in value %}
+                                <div><code>{{ v }}</code></div>
+                            {% end %}
+                        {% else %}
+                            <code>{{ value }}</code>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-warning">Could not load tenant details.</div>
+        {% end %}
+    </div>
+</div>
+{% end %}

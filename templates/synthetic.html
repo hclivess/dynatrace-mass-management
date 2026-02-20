@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Synthetic Monitors{% end %}
+{% block page_title %}Synthetic Monitors{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} monitors</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Entity ID</th>
+                    <th>Type</th>
+                    <th>Frequency</th>
+                    <th>Locations</th>
+                    <th class="text-center">Status</th>
+                    <th style="width:100px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in data %}
+                <tr>
+                    <td><strong>{{ m.get("name", "") }}</strong></td>
+                    <td><code style="font-size:.75rem">{{ m.get("entityId", "") }}</code></td>
+                    <td><span class="badge bg-secondary">{{ m.get("type", "") }}</span></td>
+                    <td>{{ m.get("frequencyMin", "") }} min</td>
+                    <td>{{ len(m.get("locations", [])) }}</td>
+                    <td class="text-center">
+                        {% if m.get("enabled") %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Disabled</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        <form method="post" action="/toggle_synthetic" class="d-inline">
+                            <input type="hidden" name="monitor_id" value="{{ m.get('entityId', '') }}">
+                            {% if m.get("enabled") %}
+                                <input type="hidden" name="enabled" value="false">
+                                <button type="submit" class="btn btn-sm btn-outline-warning"
+                                        onclick="return confirm('Disable {{ m.get('name','') }}?')">Disable</button>
+                            {% else %}
+                                <input type="hidden" name="enabled" value="true">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Enable</button>
+                            {% end %}
+                        </form>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No synthetic monitors configured.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

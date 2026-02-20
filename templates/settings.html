@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Settings 2.0{% end %}
+{% block page_title %}Settings 2.0{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header fw-bold">Browse Settings Objects</div>
+    <div class="card-body">
+        <form method="get" action="/settings">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <label class="form-label">Schema ID</label>
+                    <input type="text" name="schema_id" class="form-control font-monospace"
+                           value="{{ schema_id if schema_id else '' }}"
+                           placeholder="builtin:alerting.profile">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Browse</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="/settings" class="btn btn-outline-secondary w-100">All Schemas</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if objects is not None %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Objects: <code>{{ schema_id }}</code></span>
+        <span class="badge bg-secondary badge-count">{{ len(objects) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if objects %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Object ID</th>
+                    <th>Scope</th>
+                    <th>Summary</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for obj in objects[:200] %}
+                <tr>
+                    <td><code style="font-size:.75rem">{{ obj.get("objectId", "") }}</code></td>
+                    <td><span class="badge bg-light text-dark">{{ obj.get("scope", "") }}</span></td>
+                    <td>{{ obj.get("summary", "") }}</td>
+                    <td style="max-width:400px;">
+                        <details>
+                            <summary class="small text-muted">Show JSON</summary>
+                            <pre class="json mt-1 mb-0" style="font-size:.75rem; max-height:200px;">{{ json_encode(obj.get("value", {})) }}</pre>
+                        </details>
+                    </td>
+                </tr>
+                {% end %}
+                {% if len(objects) > 200 %}
+                <tr><td colspan="4" class="text-muted text-center py-2">Showing 200 of {{ len(objects) }}.</td></tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No objects found for this schema.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}
+
+{% if schemas %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Available Schemas</span>
+        <span class="badge bg-secondary badge-count">{{ len(schemas) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Schema ID</th>
+                    <th>Display Name</th>
+                    <th>Version</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in schemas %}
+                <tr>
+                    <td><code style="font-size:.8rem">{{ s.get("schemaId", "") }}</code></td>
+                    <td>{{ s.get("displayName", s.get("schemaId", "")) }}</td>
+                    <td>{{ s.get("latestSchemaVersion", "") }}</td>
+                    <td>
+                        <a href="/settings?schema_id={{ s.get('schemaId','') }}" class="btn btn-sm btn-outline-primary">Browse</a>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+{% end %}

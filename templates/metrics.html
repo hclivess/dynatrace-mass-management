@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Metrics{% end %}
+{% block page_title %}Metrics{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<!-- Query form -->
+<div class="card">
+    <div class="card-header fw-bold">Query Metrics</div>
+    <div class="card-body">
+        <form method="get" action="/metrics">
+            <div class="row g-2 mb-2">
+                <div class="col-md-7">
+                    <input type="text" class="form-control font-monospace" name="selector"
+                           placeholder="e.g. builtin:host.cpu.usage:avg" value="{{ selector }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="range" class="form-select">
+                        <option value="now-1h" {% if time_range == "now-1h" %}selected{% end %}>Last 1h</option>
+                        <option value="now-6h" {% if time_range == "now-6h" %}selected{% end %}>Last 6h</option>
+                        <option value="now-24h" {% if time_range == "now-24h" %}selected{% end %}>Last 24h</option>
+                        <option value="now-7d" {% if time_range == "now-7d" %}selected{% end %}>Last 7d</option>
+                        <option value="now-30d" {% if time_range == "now-30d" %}selected{% end %}>Last 30d</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="resolution" class="form-select">
+                        <option value="auto" {% if resolution == "auto" %}selected{% end %}>Auto</option>
+                        <option value="1m" {% if resolution == "1m" %}selected{% end %}>1 min</option>
+                        <option value="5m" {% if resolution == "5m" %}selected{% end %}>5 min</option>
+                        <option value="15m" {% if resolution == "15m" %}selected{% end %}>15 min</option>
+                        <option value="1h" {% if resolution == "1h" %}selected{% end %}>1 hour</option>
+                        <option value="1d" {% if resolution == "1d" %}selected{% end %}>1 day</option>
+                        <option value="Inf" {% if resolution == "Inf" %}selected{% end %}>Aggregate</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary w-100" type="submit">Query</button>
+                </div>
+            </div>
+            <div class="form-text">
+                Enter a metric selector. Examples: <code>builtin:host.cpu.usage:avg</code>,
+                <code>builtin:service.response.time:percentile(95)</code>,
+                <code>builtin:host.mem.usage:avg:splitBy("dt.entity.host")</code>.
+                Leave empty to browse all available metrics.
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if data.get("error") %}
+<div class="alert alert-danger mt-3">{{ data["error"] }}</div>
+{% end %}
+
+<!-- Chart + data table for query results -->
+{% if data.get("result") %}
+    {% set results = data["result"] %}
+    {% for _idx, series in enumerate(results) %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><code>{{ series.get("metricId", "") }}</code></span>
+                <span class="badge bg-secondary">{{ len(series.get("data", [])) }} series</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_{{ _idx }}" height="80"></canvas>
+            </div>
+            <div class="card-footer bg-transparent p-0">
+                <!-- Data table per dimension -->
+                {% for d in series.get("data", []) %}
+                <details class="p-3 border-top">
+                    <summary class="small text-muted">
+                        {% set dims = d.get("dimensionMap", {}) %}
+                        {% if dims %}
+                            {% for dk, dv in dims.items() %}<span class="badge bg-light text-dark me-1">{{ dk }}={{ dv }}</span>{% end %}
+                        {% else %}
+                            Aggregated (no dimensions)
+                        {% end %}
+                        — {{ len(d.get("values", [])) }} data points
+                    </summary>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm table-bordered mb-0" style="font-size:.8rem">
+                            <thead class="table-light">
+                                <tr><th>Timestamp</th><th class="text-end">Value</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for i, ts in enumerate(d.get("timestamps", [])) %}
+                                <tr>
+                                    <td>{{ convert_ts(ts) }}</td>
+                                    <td class="text-end font-monospace">
+                                        {% set val = d.get("values", [])[i] if i < len(d.get("values", [])) else None %}
+                                        {% if val is not None %}{{ "%.4f" % val }}{% else %}—{% end %}
+                                    </td>
+                                </tr>
+                                {% end %}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+                {% end %}
+            </div>
+        </div>
+    {% end %}
+{% end %}
+
+<!-- Metric browser when no selector -->
+{% if data.get("metrics") %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Available Metrics</span>
+        <span class="badge bg-secondary badge-count">{{ data.get("totalCount", len(data["metrics"])) }}</span>
+    </div>
+    <div class="card-body p-2">
+        <input type="text" class="form-control form-control-sm mb-2" id="metricFilter"
+               placeholder="Filter metrics..." onkeyup="filterMetrics()">
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0" id="metricsTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Metric ID</th>
+                    <th>Display Name</th>
+                    <th>Unit</th>
+                    <th>Description</th>
+                    <th style="width:70px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in data["metrics"][:500] %}
+                <tr>
+                    <td><code style="font-size:.8rem">{{ m.get("metricId", "") }}</code></td>
+                    <td>{{ m.get("displayName", "") }}</td>
+                    <td><span class="badge bg-light text-dark">{{ m.get("unit", "") }}</span></td>
+                    <td class="text-muted small" style="max-width:280px; overflow:hidden;">{{ (m.get("description") or "")[:100] }}</td>
+                    <td>
+                        <a href="/metrics?selector={{ m.get('metricId','') }}&range=now-24h"
+                           class="btn btn-sm btn-outline-primary">Query</a>
+                    </td>
+                </tr>
+                {% end %}
+                {% if len(data.get("metrics", [])) > 500 %}
+                <tr><td colspan="5" class="text-muted text-center py-2">Showing 500 of {{ len(data["metrics"]) }} metrics. Use the filter above.</td></tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+{% end %}
+
+{% block scripts %}
+<script>
+// Client-side filter for metric browser
+function filterMetrics() {
+    const q = document.getElementById('metricFilter').value.toLowerCase();
+    const rows = document.querySelectorAll('#metricsTable tbody tr');
+    rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+}
+
+// Chart.js rendering for query results
+{% if data.get("result") %}
+document.addEventListener('DOMContentLoaded', function() {
+    const palette = ['#1496ff','#6c3fc5','#00b9ae','#f5a623','#d94f4f','#73bf69','#8ab8ff','#ff6b9d'];
+
+    {% for _idx, series in enumerate(data["result"]) %}
+    (function() {
+        const ctx = document.getElementById('chart_{{ _idx }}');
+        if (!ctx) return;
+
+        const datasets = [];
+        const allData = {% raw json_encode(series.get("data", [])) %};
+        let labelSet = [];
+
+        allData.forEach(function(d, idx) {
+            const timestamps = (d.timestamps || []).map(function(ts) {
+                return new Date(ts).toLocaleString();
+            });
+            if (timestamps.length > labelSet.length) labelSet = timestamps;
+
+            const dims = d.dimensionMap || {};
+            const dimLabel = Object.values(dims).join(', ') || 'Value';
+
+            datasets.push({
+                label: dimLabel,
+                data: d.values || [],
+                borderColor: palette[idx % palette.length],
+                backgroundColor: palette[idx % palette.length] + '20',
+                borderWidth: 2,
+                pointRadius: d.values && d.values.length > 50 ? 0 : 3,
+                tension: 0.3,
+                fill: datasets.length === 0
+            });
+        });
+
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: labelSet, datasets: datasets },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: datasets.length > 1, position: 'bottom' },
+                    title: { display: false }
+                },
+                scales: {
+                    x: { display: true, ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+                    y: { display: true, beginAtZero: false }
+                }
+            }
+        });
+    })();
+    {% end %}
+});
+{% end %}
+</script>
+{% end %}

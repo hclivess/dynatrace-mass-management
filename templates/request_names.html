@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Request Naming{% end %}
+{% block page_title %}Request Naming Rules{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(request_names) }} rules</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Existing Rules</span>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#addRuleForm">
+            + Add Rule
+        </button>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if request_names %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Conditions</th>
+                    <th>Placeholders</th>
+                    <th style="width:80px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in request_names %}
+                <tr>
+                    <td><strong>{{ item.get("name", "") }}</strong></td>
+                    <td><code style="font-size:.75rem">{{ item.get("id", "") }}</code></td>
+                    <td style="max-width:250px; overflow:hidden;" class="small text-muted">
+                        {% if item.get("details") and item["details"].get("conditions") %}
+                            {{ len(item["details"]["conditions"]) }} condition(s)
+                        {% else %}
+                            —
+                        {% end %}
+                    </td>
+                    <td style="max-width:200px; overflow:hidden;" class="small text-muted">
+                        {% if item.get("details") and item["details"].get("placeholders") %}
+                            {{ len(item["details"]["placeholders"]) }} placeholder(s)
+                        {% else %}
+                            —
+                        {% end %}
+                    </td>
+                    <td>
+                        <form method="post" action="/delete_request_name" class="d-inline">
+                            <input type="hidden" name="id" value="{{ item['id'] }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete rule: {{ item.get('name','') }}?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3">
+            <p class="text-muted mb-0">No request naming rules found.</p>
+        </div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="addRuleForm">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Add New Rule</div>
+        <div class="card-body">
+            <div class="mb-2">
+                <a href="https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/configuration-api/service-api/request-naming-api/post-new-rule"
+                   target="_blank" class="btn btn-sm btn-outline-secondary">API Documentation ↗</a>
+            </div>
+            <form method="post" action="/add_request_name">
+                <div class="mb-3">
+                    <label for="data" class="form-label">Rule JSON</label>
+                    <textarea class="form-control font-monospace" id="data" name="data" rows="14" style="font-size:.85rem">{
+  "enabled": true,
+  "namingPattern": "renamed request",
+  "conditions": [
+    {
+      "attribute": "WEBREQUEST_URL_PATH",
+      "comparisonInfo": {
+        "type": "STRING",
+        "comparison": "BEGINS_WITH",
+        "value": "/url",
+        "negate": false,
+        "caseSensitive": false
+      }
+    }
+  ]
+}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Rule</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#addRuleForm">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

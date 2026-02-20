@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Security Problems{% end %}
+{% block page_title %}Security Problems{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} vulnerabilities</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Technology</th>
+                    <th>CVEs</th>
+                    <th style="width:80px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sp in data %}
+                <tr>
+                    <td>
+                        <strong>{{ sp.get("title", sp.get("displayId", ""))[:60] }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ (sp.get("securityProblemId") or "")[:24] }}</div>
+                    </td>
+                    <td>
+                        {% set sev = sp.get("severity", "") %}
+                        <span class="badge {% if sev == "CRITICAL" %}bg-danger{% elif sev == "HIGH" %}bg-warning text-dark{% elif sev == "MEDIUM" %}bg-info text-dark{% else %}bg-secondary{% end %}">{{ sev }}</span>
+                    </td>
+                    <td>{{ sp.get("status", "") }}</td>
+                    <td>{{ sp.get("riskAssessment", {}).get("riskScore", "—") }}</td>
+                    <td>{{ sp.get("technology", "") }}</td>
+                    <td style="max-width:150px; overflow:hidden;">
+                        {% for cve in sp.get("cveIds", [])[:2] %}
+                            <span class="badge bg-light text-dark">{{ cve }}</span>
+                        {% end %}
+                        {% if len(sp.get("cveIds", [])) > 2 %}
+                            <span class="text-muted small">+{{ len(sp["cveIds"]) - 2 }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if sp.get("status") != "MUTED" %}
+                        <form method="post" action="/mute_security" class="d-inline">
+                            <input type="hidden" name="problem_id" value="{{ sp.get('securityProblemId', '') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-warning"
+                                    onclick="return confirm('Mute {{ sp.get('title','')[:40] }}?')">Mute</button>
+                        </form>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Muted</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No security problems found.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

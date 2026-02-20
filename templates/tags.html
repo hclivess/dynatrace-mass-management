@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Tag Management{% end %}
+{% block page_title %}Tag Management{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header fw-bold">Current Host Tags</div>
+    <div class="card-body table-responsive">
+        {% set tags = custom_host_tags.get("tags", []) if isinstance(custom_host_tags, dict) else [] %}
+        {% if tags %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Tag Key</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+                {% for tag in tags %}
+                <tr>
+                    <td><code>{{ tag.get("key", "") }}</code></td>
+                    <td>{{ tag.get("value", "") if tag.get("value") else "—" }}</td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mb-0">No custom host tags found.</p>
+        {% end %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- ADD TAGS -->
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-header fw-bold text-success">Add Tags</div>
+            <div class="card-body">
+                <form method="post" action="/add_tags" onsubmit="return buildTagsJson()">
+                    <div class="mb-3">
+                        <label for="add_hosts" class="form-label">Host names</label>
+                        <textarea class="form-control" id="add_hosts" name="hosts" rows="2"
+                                  placeholder="host1, host2, host3"></textarea>
+                        <div class="form-text">Comma-separated display names.</div>
+                    </div>
+                    <label class="form-label">Tags to add</label>
+                    <div id="tag-pairs">
+                        <div class="input-group mb-2 tag-row">
+                            <span class="input-group-text" style="width:60px">Key</span>
+                            <input type="text" class="form-control tag-key" placeholder="environment">
+                            <span class="input-group-text" style="width:70px">Value</span>
+                            <input type="text" class="form-control tag-val" placeholder="production">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addTagRow()">+ Add another tag</button>
+                    <input type="hidden" name="tags" id="tags_json">
+                    <div>
+                        <button type="submit" class="btn btn-success">Add Tags</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- REMOVE TAGS -->
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header fw-bold text-danger">Remove Tags</div>
+            <div class="card-body">
+                <form method="post" action="/remove_tags">
+                    <div class="mb-3">
+                        <label for="rm_hosts" class="form-label">Host names</label>
+                        <textarea class="form-control" id="rm_hosts" name="hosts" rows="2"
+                                  placeholder="host1, host2, host3"></textarea>
+                        <div class="form-text">Comma-separated display names.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rm_tags" class="form-label">Tag keys to remove</label>
+                        <input class="form-control" id="rm_tags" name="tags" type="text"
+                               placeholder="environment, team, cost-center">
+                        <div class="form-text">Comma-separated. All values for each key will be removed.</div>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Remove Tags</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+function addTagRow() {
+    const c = document.getElementById('tag-pairs');
+    const r = document.createElement('div');
+    r.className = 'input-group mb-2 tag-row';
+    r.innerHTML =
+        '<span class="input-group-text" style="width:60px">Key</span>' +
+        '<input type="text" class="form-control tag-key" placeholder="key">' +
+        '<span class="input-group-text" style="width:70px">Value</span>' +
+        '<input type="text" class="form-control tag-val" placeholder="value">' +
+        '<button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>';
+    c.appendChild(r);
+}
+function buildTagsJson() {
+    const obj = {};
+    document.querySelectorAll('.tag-row').forEach(function(row) {
+        const k = row.querySelector('.tag-key').value.trim();
+        const v = row.querySelector('.tag-val').value.trim();
+        if (k) obj[k] = v;
+    });
+    if (!Object.keys(obj).length) { alert('Add at least one tag.'); return false; }
+    document.getElementById('tags_json').value = JSON.stringify(obj);
+    return true;
+}
+</script>
+{% end %}

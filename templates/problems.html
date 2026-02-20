@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Problems{% end %}
+{% block page_title %}Problems{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} problems</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Problems</span>
+        <div class="btn-group btn-group-sm">
+            <a href="/problems?range=now-2h" class="btn btn-outline-secondary">2h</a>
+            <a href="/problems?range=now-24h" class="btn btn-outline-secondary">24h</a>
+            <a href="/problems?range=now-7d" class="btn btn-outline-secondary">7d</a>
+            <a href="/problems?range=now-30d" class="btn btn-outline-secondary">30d</a>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Problem</th>
+                    <th>Title</th>
+                    <th>Severity</th>
+                    <th>Impact</th>
+                    <th>Status</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Affected</th>
+                    <th style="width:70px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in data %}
+                <tr>
+                    <td><code style="font-size:.8rem">{{ p.get("displayId", p.get("problemId", "")) }}</code></td>
+                    <td><strong>{{ p.get("title", "") }}</strong></td>
+                    <td>
+                        {% set sev = p.get("severityLevel", "") %}
+                        <span class="badge {% if "ERROR" in sev or "AVAILABILITY" in sev %}bg-danger{% elif "PERFORMANCE" in sev %}bg-warning text-dark{% elif "RESOURCE" in sev %}bg-info text-dark{% else %}bg-secondary{% end %}">{{ sev }}</span>
+                    </td>
+                    <td>{{ p.get("impactLevel", "") }}</td>
+                    <td>
+                        {% if p.get("status") == "OPEN" %}
+                            <span class="badge bg-danger">OPEN</span>
+                        {% else %}
+                            <span class="badge bg-success">CLOSED</span>
+                        {% end %}
+                    </td>
+                    <td class="small text-nowrap">{{ convert_ts(p.get("startTime", 0)) }}</td>
+                    <td class="small text-nowrap">{{ convert_ts(p.get("endTime", 0)) if p.get("endTime", -1) != -1 else "—" }}</td>
+                    <td class="text-center">{{ len(p.get("affectedEntities", [])) }}</td>
+                    <td>
+                        {% if p.get("status") == "OPEN" %}
+                        <form method="post" action="/close_problem" class="d-inline">
+                            <input type="hidden" name="problem_id" value="{{ p.get('problemId', '') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                    onclick="return confirm('Close problem {{ p.get('displayId','') }}?')">Close</button>
+                        </form>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No problems in selected time range.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

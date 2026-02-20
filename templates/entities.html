@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Entities{% end %}
+{% block page_title %}Entities{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header fw-bold">Query Entities</div>
+    <div class="card-body">
+        <form method="get" action="/entities">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-9">
+                    <label class="form-label">Entity Selector</label>
+                    <input type="text" class="form-control font-monospace" name="selector"
+                           value="{{ selector if selector else '' }}"
+                           placeholder='type("HOST")  or  type("SERVICE"),tag("environment:production")'>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" type="submit">Query</button>
+                </div>
+            </div>
+            <div class="form-text mt-1">
+                Leave empty to browse entity types.
+                <a href="https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/entity-v2/get-entities-list" target="_blank">Selector syntax ↗</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if entities %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Entities</span>
+        <span class="badge bg-secondary badge-count">{{ len(entities) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Display Name</th>
+                    <th>Entity ID</th>
+                    <th>Type</th>
+                    <th>Tags</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entities[:500] %}
+                <tr>
+                    <td><strong>{{ e.get("displayName", "") }}</strong></td>
+                    <td><code style="font-size:.75rem">{{ e.get("entityId", "") }}</code></td>
+                    <td><span class="badge bg-light text-dark">{{ e.get("type", "") }}</span></td>
+                    <td style="max-width:250px; overflow:hidden;">
+                        {% for tag in e.get("tags", [])[:4] %}
+                            <span class="badge bg-info text-dark me-1" style="font-size:.7rem">{{ tag.get("key","") }}{% if tag.get("value") %}:{{ tag["value"] }}{% end %}</span>
+                        {% end %}
+                        {% if len(e.get("tags", [])) > 4 %}
+                            <span class="text-muted small">+{{ len(e["tags"]) - 4 }}</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+                {% if len(entities) > 500 %}
+                <tr><td colspan="4" class="text-muted text-center py-2">Showing 500 of {{ len(entities) }}. Refine your selector.</td></tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+
+{% if types %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Entity Types</span>
+        <span class="badge bg-secondary badge-count">{{ len(types) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Type</th>
+                    <th>Display Name</th>
+                    <th>Dimension Key</th>
+                    <th>Limit Exceeded</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in types %}
+                <tr>
+                    <td><code>{{ v.get("type", "") }}</code></td>
+                    <td>{{ v.get("displayName", "") }}</td>
+                    <td><code class="small">{{ v.get("dimensionKey", "") }}</code></td>
+                    <td>
+                        {% if v.get("entityLimitExceeded") %}
+                            <span class="badge bg-warning text-dark">Yes</span>
+                        {% else %}
+                            <span class="badge bg-success">No</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        <a href='/entities?selector=type("{{ v.get("type","") }}")' class="btn btn-sm btn-outline-primary">Browse</a>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+{% end %}

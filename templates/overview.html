@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Overview{% end %}
+{% block page_title %}Environment Overview{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<style>
+    .stat-card .stat-value { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .stat-card .stat-label { font-size: .78rem; text-transform: uppercase; color: #6c757d; letter-spacing: .03em; }
+    .chart-box { position: relative; height: 220px; }
+</style>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-3">
+    {% for item in kpis %}
+    <div class="col-6 col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value text-{{ item.get('color', 'primary') }}">{{ item['value'] }}</div>
+            <div class="stat-label">{{ item['label'] }}</div>
+            {% if item.get('sub') %}<div class="small text-muted mt-1">{{ item['sub'] }}</div>{% end %}
+        </div>
+    </div>
+    {% end %}
+</div>
+
+<div class="row g-3">
+    <!-- Problem Breakdown — Doughnut -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Problems (last 24h)</div>
+            <div class="card-body">
+                {% if problem_stats['total'] > 0 %}
+                <div class="row align-items-center">
+                    <div class="col-7"><div class="chart-box"><canvas id="chartProblems"></canvas></div></div>
+                    <div class="col-5">
+                        <div class="mb-2 small">
+                            Open: <strong class="text-danger">{{ problem_stats['open'] }}</strong><br>
+                            Closed: <strong class="text-success">{{ problem_stats['closed'] }}</strong>
+                        </div>
+                        {% for sev, count in problem_stats['by_severity'].items() %}
+                            {% if count > 0 %}
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>{{ sev }}</span>
+                                <span class="badge {% if 'AVAILABILITY' in sev or 'ERROR' in sev %}bg-danger{% elif 'PERFORMANCE' in sev %}bg-warning text-dark{% elif 'RESOURCE' in sev %}bg-info text-dark{% else %}bg-secondary{% end %}">{{ count }}</span>
+                            </div>
+                            {% end %}
+                        {% end %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-success mb-0 py-3 text-center fs-5">✓ No problems in the last 24 hours</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+    <!-- SLO Health — Doughnut -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">SLO Health</div>
+            <div class="card-body">
+                {% if slo_stats['total'] > 0 %}
+                <div class="row align-items-center">
+                    <div class="col-7"><div class="chart-box"><canvas id="chartSLO"></canvas></div></div>
+                    <div class="col-5">
+                        <div class="d-flex justify-content-between small mb-2"><span>Healthy</span><span class="badge bg-success">{{ slo_stats['success'] }}</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span>Warning</span><span class="badge bg-warning text-dark">{{ slo_stats['warning'] }}</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span>Failing</span><span class="badge bg-danger">{{ slo_stats['failure'] }}</span></div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0 py-3 text-center">No SLOs configured.</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Security — Horizontal Bar -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Security Vulnerabilities</div>
+            <div class="card-body">
+                {% if security_stats['total'] > 0 %}
+                <div class="chart-box"><canvas id="chartSecurity"></canvas></div>
+                <div class="text-center small text-muted mt-2">
+                    Muted: {{ security_stats.get('muted', 0) }} / Open: {{ security_stats.get('open', 0) }}
+                </div>
+                {% else %}
+                <p class="text-success mb-0 py-3 text-center fs-5">✓ No vulnerabilities detected</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Host Monitoring — Doughnut -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Host Monitoring</div>
+            <div class="card-body">
+                {% if host_stats['total'] > 0 %}
+                <div class="row align-items-center">
+                    <div class="col-7"><div class="chart-box"><canvas id="chartHosts"></canvas></div></div>
+                    <div class="col-5">
+                        <div class="d-flex justify-content-between small mb-2"><span>Monitored</span><span class="badge bg-success">{{ host_stats['monitored'] }}</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span>Unmonitored</span><span class="badge bg-secondary">{{ host_stats['unmonitored'] }}</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span>Host Groups</span><span class="badge bg-primary">{{ host_stats['groups'] }}</span></div>
+                        {% for mode, cnt in host_stats.get('by_mode', {}).items() %}
+                        <div class="d-flex justify-content-between small mb-1"><span class="text-muted">{{ mode }}</span><span>{{ cnt }}</span></div>
+                        {% end %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0 py-3 text-center">No host data available.</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Synthetic Monitors — Bar -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">Synthetic Monitors</div>
+            <div class="card-body">
+                {% if synthetic_stats['total'] > 0 %}
+                <div class="chart-box"><canvas id="chartSynthetic"></canvas></div>
+                {% else %}
+                <p class="text-muted mb-0 py-3 text-center">No synthetic monitors configured.</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ActiveGate Summary — Doughnut -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-bold">ActiveGates</div>
+            <div class="card-body">
+                {% if ag_stats['total'] > 0 %}
+                <div class="row align-items-center">
+                    <div class="col-7"><div class="chart-box"><canvas id="chartAG"></canvas></div></div>
+                    <div class="col-5">
+                        <div class="d-flex justify-content-between small mb-2"><span>Connected</span><span class="badge bg-success">{{ ag_stats['connected'] }}</span></div>
+                        <div class="d-flex justify-content-between small mb-2"><span>Disconnected</span><span class="badge bg-danger">{{ ag_stats['disconnected'] }}</span></div>
+                        {% if ag_stats.get('versions') %}
+                        <hr class="my-2">
+                        <div class="small text-muted fw-bold mb-1">Versions:</div>
+                        {% for v, c in sorted(ag_stats['versions'].items(), reverse=True)[:4] %}
+                        <div class="d-flex justify-content-between small mb-1"><span class="text-muted">{{ v }}</span><span>{{ c }}</span></div>
+                        {% end %}
+                        {% end %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0 py-3 text-center">No ActiveGates found.</p>
+                {% end %}
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const doughnutOpts = {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '55%',
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(c) { return c.label + ': ' + c.raw; } } }
+        }
+    };
+    const barOpts = {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    };
+
+    {% if problem_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartProblems'), {
+        type: 'doughnut',
+        data: {
+            labels: {% raw json_encode(list(problem_stats['by_severity'].keys())) %},
+            datasets: [{
+                data: {% raw json_encode(list(problem_stats['by_severity'].values())) %},
+                backgroundColor: [
+                    {% for sev in problem_stats['by_severity'] %}
+                    '{% if "AVAILABILITY" in sev or "ERROR" in sev %}#dc3545{% elif "PERFORMANCE" in sev %}#ffc107{% elif "RESOURCE" in sev %}#0dcaf0{% else %}#6c757d{% end %}',
+                    {% end %}
+                ]
+            }]
+        },
+        options: doughnutOpts
+    });
+    {% end %}
+
+    {% if slo_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartSLO'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Healthy', 'Warning', 'Failing'],
+            datasets: [{ data: [{{ slo_stats['success'] }}, {{ slo_stats['warning'] }}, {{ slo_stats['failure'] }}], backgroundColor: ['#198754','#ffc107','#dc3545'] }]
+        },
+        options: doughnutOpts
+    });
+    {% end %}
+
+    {% if security_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartSecurity'), {
+        type: 'bar',
+        data: {
+            labels: ['Critical', 'High', 'Medium', 'Low'],
+            datasets: [{
+                data: [{{ security_stats.get('CRITICAL', 0) }}, {{ security_stats.get('HIGH', 0) }}, {{ security_stats.get('MEDIUM', 0) }}, {{ security_stats.get('LOW', 0) }}],
+                backgroundColor: ['#dc3545','#ffc107','#0dcaf0','#6c757d'],
+                borderRadius: 4
+            }]
+        },
+        options: barOpts
+    });
+    {% end %}
+
+    {% if host_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartHosts'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Monitored', 'Unmonitored'],
+            datasets: [{ data: [{{ host_stats['monitored'] }}, {{ host_stats['unmonitored'] }}], backgroundColor: ['#198754','#6c757d'] }]
+        },
+        options: doughnutOpts
+    });
+    {% end %}
+
+    {% if synthetic_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartSynthetic'), {
+        type: 'bar',
+        data: {
+            labels: {% raw json_encode(list(synthetic_stats.get('by_type', {}).keys())) %},
+            datasets: [
+                { label: 'Enabled', data: [{% for t in synthetic_stats.get('by_type', {}) %}{{ synthetic_stats.get('by_type',{})[t] }},{% end %}], backgroundColor: '#198754', borderRadius: 4 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+    {% end %}
+
+    {% if ag_stats['total'] > 0 %}
+    new Chart(document.getElementById('chartAG'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Connected', 'Disconnected'],
+            datasets: [{ data: [{{ ag_stats['connected'] }}, {{ ag_stats['disconnected'] }}], backgroundColor: ['#198754','#dc3545'] }]
+        },
+        options: doughnutOpts
+    });
+    {% end %}
+});
+</script>
+{% end %}

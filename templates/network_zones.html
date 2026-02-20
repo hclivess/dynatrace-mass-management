@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Network Zones{% end %}
+{% block page_title %}Network Zones{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Network Zones</span>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createNZ">+ Create Zone</button>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% set zones = data.get("networkZones", []) if isinstance(data, dict) else [] %}
+        {% if zones %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th class="text-center">OneAgents</th>
+                    <th class="text-center">ActiveGates</th>
+                    <th>Alternative Zones</th>
+                    <th style="width:80px" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for z in zones %}
+                <tr>
+                    <td><code>{{ z.get("id", "") }}</code></td>
+                    <td>{{ z.get("description", "") }}</td>
+                    <td class="text-center">
+                        {% set oa = z.get("numOfOneAgentsUsing", 0) %}
+                        <span class="badge {% if oa > 0 %}bg-primary{% else %}bg-secondary{% end %}">{{ oa }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% set ag = z.get("numOfConfiguredActiveGates", 0) %}
+                        <span class="badge {% if ag > 0 %}bg-primary{% else %}bg-secondary{% end %}">{{ ag }}</span>
+                    </td>
+                    <td>{% for az in z.get("alternativeZones", []) %}<span class="badge bg-light text-dark me-1">{{ az }}</span>{% end %}</td>
+                    <td class="text-end">
+                        {% set oa = z.get("numOfOneAgentsUsing", 0) %}
+                        {% set ag = z.get("numOfConfiguredActiveGates", 0) %}
+                        {% if oa == 0 and ag == 0 %}
+                        <form method="post" action="/delete_network_zone">
+                            <input type="hidden" name="zone_id" value="{{ z.get('id','') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete zone {{ z.get('id','') }}?')">Delete</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small" title="Cannot delete: zone has connected agents">in use</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No network zones configured (using default zone).</p></div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="createNZ">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Create Network Zone</div>
+        <div class="card-body">
+            <form method="post" action="/create_network_zone">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Zone ID</label>
+                        <input type="text" name="zone_id" class="form-control font-monospace" placeholder="my.zone.name" required>
+                        <div class="form-text">Lowercase, dots allowed. No spaces.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="Zone for EMEA region">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Alternative Zones <span class="text-muted">(comma-separated)</span></label>
+                        <input type="text" name="alt_zones" class="form-control font-monospace" placeholder="default.zone, backup.zone">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#createNZ">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}API Tokens{% end %}
+{% block page_title %}API Tokens{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} tokens</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">API Tokens</span>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createTokenForm">
+            + Create Token
+        </button>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Owner</th>
+                    <th>Scopes</th>
+                    <th>Created</th>
+                    <th>Last Used</th>
+                    <th class="text-center">Enabled</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in data %}
+                <tr>
+                    <td>
+                        <strong>{{ t.get("name", "") }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ t.get("id", "") }}</div>
+                    </td>
+                    <td>{{ t.get("owner", "") }}</td>
+                    <td style="max-width:220px; overflow:hidden;"
+                        title="{{ ', '.join(t.get('scopes', [])) }}">
+                        {% for s in t.get("scopes", [])[:3] %}
+                            <span class="badge bg-light text-dark" style="font-size:.7rem">{{ s }}</span>
+                        {% end %}
+                        {% if len(t.get("scopes", [])) > 3 %}
+                            <span class="text-muted small" title="{{ ', '.join(t.get('scopes', [])[3:]) }}">+{{ len(t["scopes"]) - 3 }}</span>
+                        {% end %}
+                    </td>
+                    <td class="small text-nowrap">{{ t.get("creationDate", "") }}</td>
+                    <td class="small text-nowrap">{{ t.get("lastUsedDate", "") if t.get("lastUsedDate") else "Never" }}</td>
+                    <td class="text-center">
+                        {% if t.get("enabled", True) %}
+                            <span class="badge bg-success">✓</span>
+                        {% else %}
+                            <span class="badge bg-secondary">✗</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No API tokens found.</p></div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="createTokenForm">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Create API Token</div>
+        <div class="card-body">
+            <form method="post" action="/create_token">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Token Name</label>
+                        <input type="text" name="token_name" class="form-control" placeholder="my-automation-token" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Expiration <span class="text-muted">(optional, ISO date)</span></label>
+                        <input type="text" name="expiration" class="form-control" placeholder="2026-12-31T23:59:59Z">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Scopes</label>
+                        <div class="row row-cols-2 row-cols-md-3 g-2">
+                            {% for scope in ["metrics.read", "metrics.write", "metrics.ingest", "entities.read", "entities.write", "settings.read", "settings.write", "problems.read", "events.read", "events.ingest", "logs.read", "logs.ingest", "auditLogs.read", "activeGateTokenManagement.read", "DataExport", "ReadConfig", "WriteConfig", "InstallerDownload"] %}
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="scopes" value="{{ scope }}" id="scope_{{ scope }}">
+                                    <label class="form-check-label small" for="scope_{{ scope }}">{{ scope }}</label>
+                                </div>
+                            </div>
+                            {% end %}
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Create Token</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#createTokenForm">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

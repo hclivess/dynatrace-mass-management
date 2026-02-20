@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Auto-Tag Rules{% end %}
+{% block page_title %}Auto-Tag Rules{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} rules</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Auto-Tag Rules</span>
+        <div class="d-flex gap-2">
+            <a href="/auto_tags_export" class="btn btn-sm btn-outline-secondary">Export All</a>
+            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#importForm">Import</button>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th class="text-center">Rules</th>
+                    <th>Description</th>
+                    <th>Entity Types</th>
+                    <th style="width:230px" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _idx, tag in enumerate(data) %}
+                {% set details = tag.get("details") or {} %}
+                {% set rules = details.get("rules", []) %}
+                <tr>
+                    <td>
+                        <strong>{{ tag.get("name", "") }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ (tag.get("id") or "")[:20] }}…</div>
+                    </td>
+                    <td class="text-center"><span class="badge bg-primary">{{ len(rules) }}</span></td>
+                    <td class="small text-muted" style="max-width:200px; overflow:hidden;">{{ (details.get("description") or "")[:80] }}</td>
+                    <td>
+                        {% set etypes = set() %}
+                        {% for r in rules %}{% if r.get("type") %}{% set _ = etypes.add(r["type"]) %}{% end %}{% end %}
+                        {% for et in sorted(etypes) %}<span class="badge bg-light text-dark me-1" style="font-size:.7rem">{{ et }}</span>{% end %}
+                    </td>
+                    <td class="text-end">
+                        <div class="action-btns justify-content-end">
+                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#rules_{{ _idx }}">Details</button>
+                            <a href="/auto_tag_export?id={{ tag.get('id','') }}" class="btn btn-sm btn-outline-secondary">Export</a>
+                            <form method="post" action="/delete_auto_tag">
+                                <input type="hidden" name="id" value="{{ tag.get('id','') }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete auto-tag: {{ tag.get('name','') }}?')">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="collapse" id="rules_{{ _idx }}">
+                    <td colspan="5" class="bg-light p-3">
+                        {% if rules %}
+                        <table class="table table-sm table-bordered mb-0" style="font-size:.8rem">
+                            <thead><tr class="table-secondary"><th>Type</th><th>Enabled</th><th>Value Format</th><th>Propagation</th><th>Conditions</th></tr></thead>
+                            <tbody>
+                                {% for r in rules %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ r.get("type", "") }}</span></td>
+                                    <td>{% if r.get("enabled", True) %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% end %}</td>
+                                    <td><code>{{ r.get("valueFormat") or "—" }}</code></td>
+                                    <td>{% for pt in r.get("propagationTypes", []) %}<span class="badge bg-info text-dark me-1">{{ pt }}</span>{% end %}</td>
+                                    <td>{% for c in r.get("conditions", []) %}<div class="mb-1"><code>{{ c.get("key", {}).get("attribute", "") }}</code> {{ c.get("comparisonInfo", {}).get("type", "") }}: <strong>{{ c.get("comparisonInfo", {}).get("value", {}).get("value", "") if isinstance(c.get("comparisonInfo", {}).get("value"), dict) else c.get("comparisonInfo", {}).get("value", "") }}</strong></div>{% end %}</td>
+                                </tr>
+                                {% end %}
+                            </tbody>
+                        </table>
+                        {% else %}<span class="text-muted">No rules defined.</span>{% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No auto-tag rules found.</p></div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="importForm">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Import Auto-Tag Rule (JSON)</div>
+        <div class="card-body">
+            <form method="post" action="/import_auto_tag">
+                <textarea name="config" class="form-control font-monospace mb-3" rows="8" placeholder='{ "name": "MyTag", "rules": [...] }'></textarea>
+                <button type="submit" class="btn btn-primary">Import</button>
+                <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#importForm">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

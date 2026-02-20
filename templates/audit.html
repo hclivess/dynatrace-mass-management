@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Log{% end %}
+{% block page_title %}Audit Log{% end %}
+{% block header_extra %}<small>{{ name }}</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header fw-bold">Filter</div>
+    <div class="card-body">
+        <form method="get" action="/audit_log">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Time Range</label>
+                    <select name="range" class="form-select">
+                        <option value="now-24h" {% if time_range == "now-24h" %}selected{% end %}>Last 24 hours</option>
+                        <option value="now-3d" {% if time_range == "now-3d" %}selected{% end %}>Last 3 days</option>
+                        <option value="now-7d" {% if time_range == "now-7d" %}selected{% end %}>Last 7 days</option>
+                        <option value="now-14d" {% if time_range == "now-14d" %}selected{% end %}>Last 14 days</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Filter <span class="text-muted">(optional)</span></label>
+                    <input type="text" name="filter" class="form-control font-monospace" value="{{ filter_str }}"
+                           placeholder='category("CONFIG") AND user("admin@company.com")'>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Audit Entries</span>
+        <span class="badge bg-secondary badge-count">{{ len(data.get("auditLogs", [])) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% set logs = data.get("auditLogs", []) %}
+        {% if logs %}
+        <table class="table table-sm table-hover mb-0" style="font-size:.85rem">
+            <thead class="table-light">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Event</th>
+                    <th>Category</th>
+                    <th>Entity ID</th>
+                    <th>User</th>
+                    <th class="text-center">OK</th>
+                    <th>Patch</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in logs %}
+                <tr>
+                    <td class="text-nowrap">{{ convert_ts(v.get("timestamp", 0)) }}</td>
+                    <td>{{ v.get("eventType", "") }}</td>
+                    <td><span class="badge bg-light text-dark">{{ v.get("category", "") }}</span></td>
+                    <td><code style="font-size:.75rem">{{ v.get("entityId", "") }}</code></td>
+                    <td>
+                        {{ v.get("user", "") }}
+                        {% if v.get("userType") %}
+                            <span class="text-muted small">({{ v["userType"] }})</span>
+                        {% end %}
+                    </td>
+                    <td class="text-center">
+                        {% if v.get("success") %}
+                            <span class="badge bg-success">✓</span>
+                        {% else %}
+                            <span class="badge bg-danger">✗</span>
+                        {% end %}
+                    </td>
+                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                        title="{{ v.get('patch', '') }}">
+                        {{ v.get("patch", "") }}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No audit log entries found.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

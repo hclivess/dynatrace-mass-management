@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}ActiveGates{% end %}
+{% block page_title %}ActiveGates{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} ActiveGates</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">ActiveGates</span>
+        <span class="badge bg-secondary badge-count">{{ len(data) }}</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Hostname</th>
+                    <th>Version</th>
+                    <th>Type</th>
+                    <th>Network Zone</th>
+                    <th>Group</th>
+                    <th>OS</th>
+                    <th class="text-center">Modules</th>
+                    <th style="width:70px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _idx, ag in enumerate(data) %}
+                <tr>
+                    <td>
+                        <strong>{{ ag.get("hostname", "") }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ (ag.get("id") or "")[:20] }}…</div>
+                    </td>
+                    <td><code>{{ ag.get("version", "") }}</code></td>
+                    <td><span class="badge bg-secondary">{{ ag.get("type", "") }}</span></td>
+                    <td>{{ ag.get("networkZone", "default") }}</td>
+                    <td>{{ ag.get("group", "") }}</td>
+                    <td class="small">{{ ag.get("osType", "") }} {{ ag.get("osArchitecture", "") }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-primary">{{ len(ag.get("modules", [])) }}</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#ag_{{ _idx }}">Detail</button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="ag_{{ _idx }}">
+                    <td colspan="8" class="bg-light p-3" style="font-size:.85rem">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Connection Info</strong>
+                                <div>ID: <code>{{ ag.get("id", "") }}</code></div>
+                                <div>Connected: {{ "Yes" if ag.get("connected") else "No" }}</div>
+                                {% if ag.get("containerized") %}
+                                    <div>Containerized: Yes</div>
+                                {% end %}
+                                {% if ag.get("autoUpdateSettings") %}
+                                    {% set auu = ag["autoUpdateSettings"] %}
+                                    <div>Auto-update: <span class="badge {% if auu.get("updateMode") == "ENABLED" %}bg-success{% else %}bg-secondary{% end %}">{{ auu.get("updateMode", "?") }}</span></div>
+                                    {% if auu.get("targetVersion") %}
+                                        <div>Target: {{ auu["targetVersion"] }}</div>
+                                    {% end %}
+                                {% end %}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Modules</strong>
+                                {% for mod in ag.get("modules", []) %}
+                                <div>
+                                    <span class="badge {% if mod.get('enabled') %}bg-success{% else %}bg-secondary{% end %}" style="font-size:.7rem">
+                                        {{ mod.get("type", "") }}
+                                    </span>
+                                    {% if mod.get("version") %}
+                                        <span class="small text-muted">v{{ mod["version"] }}</span>
+                                    {% end %}
+                                </div>
+                                {% end %}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Network Addresses</strong>
+                                {% for addr in ag.get("networkAddresses", []) %}
+                                    <div><code>{{ addr }}</code></div>
+                                {% end %}
+                                {% if ag.get("loadBalancerAddresses") %}
+                                    <div class="mt-2"><strong>Load Balancer</strong></div>
+                                    {% for lb in ag.get("loadBalancerAddresses", []) %}
+                                        <div><code>{{ lb }}</code></div>
+                                    {% end %}
+                                {% end %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No ActiveGates found.</p></div>
+        {% end %}
+    </div>
+</div>
+{% end %}

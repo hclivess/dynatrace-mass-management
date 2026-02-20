@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Windows{% end %}
+{% block page_title %}Maintenance Windows{% end %}
+{% block header_extra %}<small>{{ name }} — {{ len(data) }} windows</small>{% end %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Maintenance Windows</span>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createMW">+ Create Window</button>
+    </div>
+    <div class="card-body table-responsive p-0">
+        {% if data %}
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Suppression</th>
+                    <th>Description</th>
+                    <th style="width:220px" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for _idx, w in enumerate(data) %}
+                {% set details = w.get("details") or {} %}
+                <tr>
+                    <td>
+                        <strong>{{ w.get("name", "") }}</strong>
+                        <div class="text-muted" style="font-size:.7rem">{{ (w.get("id") or "")[:20] }}…</div>
+                    </td>
+                    <td><span class="badge bg-secondary">{{ details.get("type", w.get("type", "")) }}</span></td>
+                    <td>
+                        {% set sup = details.get("suppression", "") %}
+                        <span class="badge {% if sup == "DETECT_PROBLEMS_AND_ALERT" %}bg-success{% elif sup == "DETECT_PROBLEMS_DONT_ALERT" %}bg-warning text-dark{% else %}bg-danger{% end %}">{{ sup or "—" }}</span>
+                    </td>
+                    <td class="text-muted small" style="max-width:200px; overflow:hidden;">{{ (w.get("description") or details.get("description") or "")[:80] }}</td>
+                    <td class="text-end">
+                        <div class="action-btns justify-content-end">
+                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#mw_{{ _idx }}">Details</button>
+                            <a href="/mw_export?id={{ w.get('id','') }}" class="btn btn-sm btn-outline-secondary">Export</a>
+                            <form method="post" action="/delete_maintenance">
+                                <input type="hidden" name="id" value="{{ w.get('id','') }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Delete maintenance window: {{ w.get('name','') }}?')">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="collapse" id="mw_{{ _idx }}">
+                    <td colspan="5" class="bg-light p-3" style="font-size:.85rem">
+                        {% if details %}
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Schedule:</strong>
+                                {% set sched = details.get("schedule", {}) %}
+                                <div>Type: <code>{{ sched.get("recurrenceType", "") }}</code></div>
+                                <div>Start: {{ sched.get("start", "") }}</div>
+                                <div>End: {{ sched.get("end", "") }}</div>
+                                <div>Timezone: {{ sched.get("zoneId", "") }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Scope:</strong>
+                                {% set scope = details.get("scope", {}) %}
+                                {% for e in scope.get("entities", [])[:5] %}<div><code>{{ e }}</code></div>{% end %}
+                                {% if scope.get("matches") %}
+                                    <div class="mt-1"><strong>Matches:</strong></div>
+                                    {% for m in scope.get("matches", [])[:3] %}<div><code>{{ m.get("type","") }}: {{ m.get("tags", []) }}</code></div>{% end %}
+                                {% end %}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Filters:</strong>
+                                {% for f in details.get("filters", [])[:3] %}<div><code>{{ f.get("entityType","") }}: {{ f.get("entityId","") }}</code></div>{% end %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-muted">No details available. The Config API may need <code>ReadConfig</code> scope.</span>
+                        {% end %}
+                    </td>
+                </tr>
+                {% end %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-3"><p class="text-muted mb-0">No maintenance windows configured.</p></div>
+        {% end %}
+    </div>
+</div>
+
+<div class="collapse mt-3" id="createMW">
+    <div class="card border-primary">
+        <div class="card-header fw-bold text-primary">Create Maintenance Window (JSON)</div>
+        <div class="card-body">
+            <form method="post" action="/create_maintenance">
+                <textarea name="config" class="form-control font-monospace mb-3" rows="12" placeholder='{ "name": "Nightly Patching", "type": "PLANNED", "suppression": "DETECT_PROBLEMS_DONT_ALERT", "schedule": {...}, "scope": {...} }'></textarea>
+                <button type="submit" class="btn btn-primary">Create</button>
+                <button type="button" class="btn btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#createMW">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% end %}

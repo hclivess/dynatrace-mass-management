@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 1rem; padding-bottom: 2rem; background: #f8f9fa; }
+        .dt-header { background: linear-gradient(135deg, #1496ff 0%, #6c3fc5 100%); color: #fff; padding: 1rem 1.5rem; border-radius: .5rem; margin-bottom: 1.5rem; }
+        .dt-header h2 { margin: 0; font-size: 1.4rem; }
+        .dt-header small { opacity: .85; }
+        .card { margin-bottom: 1rem; border: none; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .table { font-size: .9rem; }
+        .btn-portal { min-width: 100%; text-align: left; margin-bottom: .5rem; }
+        .badge-count { font-size: .85rem; }
+        pre.json { background: #f1f3f5; padding: 1rem; border-radius: .4rem; font-size: .8rem; max-height: 400px; overflow: auto; }
+        /* Action button row: consistent spacing, no cramming */
+        .action-btns { display: flex; gap: .35rem; align-items: center; flex-wrap: nowrap; }
+        .action-btns .btn { white-space: nowrap; }
+        .action-btns form { margin: 0; }
+    </style>
+    <title>DMM - {% block title %}Dynatrace Mass Management{% end %}</title>
+</head>
+<body>
+<div class="container-lg">
+    {% block header %}
+    <div class="dt-header">
+        <h2>DMM - {% block page_title %}Dynatrace Mass Management{% end %}</h2>
+        {% block header_extra %}{% end %}
+    </div>
+    {% end %}
+
+    {% block content %}{% end %}
+
+    {% block footer %}
+    <div class="mt-3 mb-4">
+        {% block nav_buttons %}
+        <a href="/portal" class="btn btn-outline-secondary">← Return to Portal</a>
+        {% end %}
+    </div>
+    {% end %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+{% block scripts %}{% end %}
+</body>
+</html>
