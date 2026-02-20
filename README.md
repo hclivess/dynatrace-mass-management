@@ -1,4 +1,5 @@
 # DMM — Dynatrace Mass Management Portal
+![alt text](thumb.jpg)
 
 A self-hosted web portal for managing multiple Dynatrace environments from a single interface. Built on Tornado (async Python), Bootstrap 5, and Chart.js — zero external databases, zero build steps.
 
