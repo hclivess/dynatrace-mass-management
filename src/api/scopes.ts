@@ -1,0 +1,35 @@
+/**
+ * Classic token scopes DMM uses, with what breaks without them. Platform tokens are scoped in
+ * Account Management instead and cannot be inspected from the environment.
+ */
+export const REQUIRED_SCOPES: { scope: string; for: string }[] = [
+  { scope: "apiTokens.read", for: "Token check, API tokens page" },
+  { scope: "apiTokens.write", for: "Creating and revoking API tokens" },
+  { scope: "entities.read", for: "Hosts, entities, tags" },
+  { scope: "entities.write", for: "Adding and removing tags" },
+  { scope: "settings.read", for: "Settings, auto-tags, maintenance windows, host monitoring" },
+  { scope: "settings.write", for: "Copying settings, enabling and disabling hosts" },
+  { scope: "problems.read", for: "Problems, overview" },
+  { scope: "problems.write", for: "Closing problems" },
+  { scope: "events.read", for: "Events" },
+  { scope: "events.ingest", for: "Sending events" },
+  { scope: "metrics.read", for: "Metric explorer, overview" },
+  { scope: "slo.read", for: "SLOs" },
+  { scope: "slo.write", for: "Creating and deleting SLOs" },
+  { scope: "securityProblems.read", for: "Vulnerabilities" },
+  { scope: "securityProblems.write", for: "Muting vulnerabilities" },
+  { scope: "activeGates.read", for: "ActiveGates" },
+  { scope: "networkZones.read", for: "Network zones" },
+  { scope: "networkZones.write", for: "Editing network zones" },
+  { scope: "extensions.read", for: "Extensions" },
+  { scope: "extensions.write", for: "Removing extension versions" },
+  { scope: "extensionConfigurations.read", for: "Extension monitoring configurations" },
+  { scope: "auditLogs.read", for: "Audit log" },
+  { scope: "releases.read", for: "Releases" },
+  { scope: "logs.read", for: "Log search" },
+  { scope: "oneAgents.read", for: "Host units and agent versions" },
+  { scope: "ReadConfig", for: "Dashboards, request naming" },
+  { scope: "WriteConfig", for: "Importing and deleting dashboards and request naming rules" },
+  { scope: "ReadSyntheticData", for: "Synthetic monitors" },
+  { scope: "ExternalSyntheticIntegration", for: "Enabling and disabling synthetic monitors" },
+];

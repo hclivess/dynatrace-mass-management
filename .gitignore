@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+test-results/
+playwright-report/
+*.local
+.env*
+# Real environment lists and exported vaults never belong in the repository.
+secrets*.json
+*.dmm-vault.json
+docs/shots/
+docs/.video/
