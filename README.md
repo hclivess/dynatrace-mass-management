@@ -47,6 +47,7 @@ Then **Environments → Add environment**: the tenant ID or any URL you copy fro
 Both kinds work:
 
 - **Classic access token** (`dt0c01.…`), created under *Access tokens* in each environment. Include `apiTokens.read` and DMM shows which other scopes are missing.
+- **Personal access token** (also `dt0c01.…`), which any user can create for themselves. Dynatrace offers these only the API v2 scopes: no `ReadConfig`, `WriteConfig`, `auditLogs.read`, `logs.read` or synthetic scopes, however many boxes you tick. With one, Dashboards, Request naming, Log search, Audit log and Synthetic monitors are greyed out in the menu and say why; everything else works.
 - **Platform token** (`dt0s16.…`), created in Account Management. Dynatrace is moving everyone to these; their permissions come from the user or service user that owns them.
 
 Scopes for a classic token, by page — give only what you use:
@@ -113,6 +114,10 @@ The hosted site's "Try it live" uses a read-only Playground token stored as the 
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
+
+## Changes in 2.1.5
+
+- DMM reads the token's scopes once and greys out pages it cannot use, with an explanation on the page instead of a 403. Personal access tokens are told that Dynatrace does not offer them `ReadConfig` and the other older scopes, so ticking every box will not help.
 
 ## Changes in 2.1.4
 

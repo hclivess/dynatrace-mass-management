@@ -2,10 +2,11 @@ import { useEffect, useState } from "preact/hooks";
 import { tryDemo } from "./api/try";
 import { PAGES, type PageDef } from "./pages";
 import { Environments } from "./pages/Environments";
-import { selectEnvironment, skipUnlock, unlocked, useAppState, useCurrent } from "./store/state";
+import { selectEnvironment, skipUnlock, unlocked, useAppState, useCurrent, useTokenScopes, type TokenScopes } from "./store/state";
 import { unseal } from "./store/vault";
 import { ConfirmHost, Toasts, useBusy } from "./ui/feedback";
 import { useRoute } from "./ui/hooks";
+import { PageHead } from "./ui/Page";
 import { Icon } from "./ui/icons";
 import { useTheme, type Theme } from "./ui/theme";
 
@@ -32,6 +33,7 @@ function Shell() {
     if (demo) void tryDemo(demo);
   }, [path]);
 
+  const scopes = useTokenScopes(current?.env);
   const page = PAGES.find((p) => p.path === path);
   const showEnvironments = path === "/environments" || environments.length === 0 || (!page && path !== "/");
   const active = showEnvironments ? null : (page ?? PAGES[0]);
@@ -57,12 +59,21 @@ function Shell() {
           [...groups].map(([group, pages]) => (
             <div class="nav-group" key={group}>
               <span>{group}</span>
-              {pages.map((p) => (
-                <a key={p.path} href={`#${p.path}`} aria-current={active?.path === p.path ? "page" : undefined}>
-                  <Icon name={p.icon} />
-                  {p.label}
-                </a>
-              ))}
+              {pages.map((p) => {
+                const missing = missingScopes(p, scopes);
+                return (
+                  <a
+                    key={p.path}
+                    href={`#${p.path}`}
+                    class={missing ? "locked" : undefined}
+                    title={missing ? `This token has no ${missing.join(" or ")} scope` : undefined}
+                    aria-current={active?.path === p.path ? "page" : undefined}
+                  >
+                    <Icon name={p.icon} />
+                    {p.label}
+                  </a>
+                );
+              })}
             </div>
           ))}
         <p class="sidebar-foot">
@@ -95,6 +106,8 @@ function Shell() {
         <main>
           {showEnvironments || !active ? (
             <Environments />
+          ) : !active.global && current && missingScopes(active, scopes) ? (
+            <MissingScope page={active} missing={missingScopes(active, scopes)!} personal={scopes!.personal} />
           ) : active.global || current ? (
             // Keyed by environment so switching tenants remounts the page and drops stale data.
             <active.component key={active.global ? "all" : current!.env.id} />
@@ -104,6 +117,45 @@ function Shell() {
         </main>
       </div>
     </div>
+  );
+}
+
+/** The scopes a page needs that the token lacks, or null when it has one of them or we cannot tell. */
+function missingScopes(page: PageDef, scopes: TokenScopes | null): string[] | null {
+  if (!page.scopes || !scopes) return null;
+  return page.scopes.some((s) => scopes.scopes.has(s)) ? null : page.scopes;
+}
+
+// Dynatrace offers personal access tokens only the API v2 scopes; these older ones need an
+// environment access token.
+const NOT_FOR_PERSONAL_TOKENS = new Set(["ReadConfig", "WriteConfig", "auditLogs.read", "logs.read", "ReadSyntheticData", "ExternalSyntheticIntegration", "DataExport"]);
+
+function MissingScope({ page, missing, personal }: { page: PageDef; missing: string[]; personal: boolean }) {
+  const needsAccessToken = personal && missing.every((s) => NOT_FOR_PERSONAL_TOKENS.has(s));
+  return (
+    <>
+      <PageHead title={page.label} />
+      <div class="notice">
+        <p style={{ margin: "0 0 0.5rem" }}>
+          This page needs the{" "}
+          {missing.map((scope, i) => (
+            <span key={scope}>
+              {i > 0 && " or "}
+              <code>{scope}</code>
+            </span>
+          ))}{" "}
+          scope, and the token for this environment does not have it.
+        </p>
+        {needsAccessToken ? (
+          <p class="muted" style={{ margin: 0 }}>
+            It is a personal access token, and Dynatrace does not offer that scope for personal tokens, so ticking every box will not add it. An environment
+            access token (created by an admin under <em>Access tokens</em>) can have it.
+          </p>
+        ) : (
+          <p class="muted" style={{ margin: 0 }}>Add the scope to the token in Dynatrace, then reload.</p>
+        )}
+      </div>
+    </>
   );
 }
 

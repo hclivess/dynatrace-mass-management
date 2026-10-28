@@ -4,6 +4,7 @@ export interface TokenInfo {
   id: string;
   name: string;
   enabled: boolean;
+  personalAccessToken?: boolean;
   scopes: string[];
   expirationDate?: string;
   owner?: string;

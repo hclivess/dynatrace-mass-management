@@ -95,6 +95,40 @@ export function clientFor(env: Environment): Dynatrace {
   return client;
 }
 
+export interface TokenScopes {
+  scopes: Set<string>;
+  personal: boolean;
+}
+
+// One lookup per environment and token. null: unknown (platform token, or the lookup failed), so
+// pages just try and report what Dynatrace says.
+const scopeLookups = new Map<string, Promise<TokenScopes | null>>();
+
+export function tokenScopes(env: Environment): Promise<TokenScopes | null> {
+  const key = `${env.id}\n${env.token}`;
+  let lookup = scopeLookups.get(key);
+  if (!lookup) {
+    lookup = clientFor(env)
+      .tokenInfo()
+      .then((info) => ("platform" in info ? null : { scopes: new Set(info.scopes), personal: info.personalAccessToken === true }))
+      .catch(() => null);
+    scopeLookups.set(key, lookup);
+  }
+  return lookup;
+}
+
+export function useTokenScopes(env: Environment | undefined): TokenScopes | null {
+  const [result, setResult] = useState<{ key: string; scopes: TokenScopes | null } | null>(null);
+  const key = env ? `${env.id}\n${env.token}` : "";
+  useEffect(() => {
+    if (!env) return;
+    let live = true;
+    tokenScopes(env).then((scopes) => live && setResult({ key, scopes }));
+    return () => void (live = false);
+  }, [key]);
+  return result?.key === key ? result.scopes : null;
+}
+
 export function useCurrent(): { env: Environment; client: Dynatrace } | null {
   const { environments, currentId } = useAppState();
   const env = environments.find((e) => e.id === currentId);

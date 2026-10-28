@@ -153,3 +153,14 @@ test("the release works when index.html is opened straight from disk", async ({ 
   await expect(app.locator(".tile", { hasText: /^Hosts/ }).locator(".value")).toHaveText("38");
   await expect(app.locator(".sidebar")).toHaveCSS("background-color", "rgb(20, 21, 43)");
 });
+
+test("a personal token is told which pages it cannot open, instead of a 403", async ({ app }) => {
+  await withEnvironments(app, [{ id: "pat", name: "Personal", url: `${MOCK}/production`, token: "dt0c01.MOCK.PERSONAL" }]);
+  await app.goto("/#/dashboards");
+  await expect(app.getByText("It is a personal access token")).toBeVisible();
+  await expect(app.locator(".error-box")).toHaveCount(0);
+  await expect(app.getByRole("link", { name: "Dashboards" })).toHaveClass(/locked/);
+  await expect(app.getByRole("link", { name: "Hosts" })).not.toHaveClass(/locked/);
+  await app.getByRole("link", { name: "Hosts" }).click();
+  await expect(app.locator("tbody tr")).toHaveCount(24);
+});

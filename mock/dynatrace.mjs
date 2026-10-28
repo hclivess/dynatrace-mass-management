@@ -88,6 +88,9 @@ function setting(schemaId, summary, value, scope = "environment") {
 }
 
 
+const PERSONAL_SCOPES = ["activeGates.read", "apiTokens.read", "apiTokens.write", "entities.read", "entities.write", "events.ingest", "events.read", "extensionConfigurations.read", "extensions.read", "extensions.write", "metrics.read", "networkZones.read", "networkZones.write", "oneAgents.read", "problems.read", "problems.write", "releases.read", "securityProblems.read", "securityProblems.write", "settings.read", "settings.write", "slo.read", "slo.write"];
+const CLASSIC_ONLY_SCOPES = ["ReadConfig", "WriteConfig", "auditLogs.read", "logs.read", "ReadSyntheticData", "ExternalSyntheticIntegration"];
+
 const SCHEMAS = [
   ["builtin:tags.auto-tagging", "Automatically applied tags"],
   ["builtin:alerting.maintenance-window", "Maintenance windows"],
@@ -146,7 +149,12 @@ function series(seed, points = 96) {
 function route(e, method, path, url, body) {
   const ok = (data, status = 200) => ({ status, body: data });
 
-  if (method === "POST" && path === "/api/v2/apiTokens/lookup") return ok({ ...e.tokens[0], scopes: [...e.tokens[0].scopes, "apiTokens.read", "problems.write", "events.read", "slo.read", "securityProblems.read", "activeGates.read", "networkZones.read", "auditLogs.read", "entities.write"], expirationDate: new Date(now + 60 * 24 * HOUR).toISOString() });
+  if (method === "POST" && path === "/api/v2/apiTokens/lookup") {
+    // A token with "PERSONAL" in it behaves like a personal access token: API v2 scopes only.
+    const personal = String(body?.token ?? "").includes("PERSONAL");
+    const scopes = personal ? PERSONAL_SCOPES : [...PERSONAL_SCOPES, ...CLASSIC_ONLY_SCOPES];
+    return ok({ ...e.tokens[0], personalAccessToken: personal, scopes, expirationDate: new Date(now + 60 * 24 * HOUR).toISOString() });
+  }
   if (method === "GET" && path === "/api/v2/apiTokens") return ok(page(e.tokens, "apiTokens", url));
 
   if (method === "GET" && path === "/api/v2/entities") {
