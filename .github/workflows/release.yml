@@ -1,7 +1,7 @@
 name: Test, build, release
 
-# Every push and pull request is tested end to end. A tag v* additionally publishes the site to
-# GitHub Pages and attaches the built site as a zip (with .sha256) to the GitHub release.
+# Every push and pull request is tested end to end. A push to main then deploys GitHub Pages; a
+# tag v* attaches the built site as a zip (with .sha256) to the GitHub release.
 on:
   push:
     branches: [main]
@@ -67,13 +67,10 @@ jobs:
           retention-days: 14
 
   release:
-    name: Release and deploy
+    name: Release
     needs: [test, e2e]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
       GH_TOKEN: ${{ github.token }}
@@ -106,6 +103,23 @@ jobs:
           gh release upload "$TAG" release/*.zip release/*.zip.sha256 --clobber
           gh release view "$TAG" --json assets --jq '.assets[].name' | tee release/assets.txt
           grep -q '\.zip$' release/assets.txt && grep -q '\.zip\.sha256$' release/assets.txt
+
+  pages:
+    name: Deploy GitHub Pages
+    needs: [test, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

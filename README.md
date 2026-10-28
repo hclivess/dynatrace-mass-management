@@ -99,7 +99,7 @@ node scripts/screenshot.mjs   # docs/thumb.png and docs/demo.gif from a real run
 
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
-A tag `v*` runs the tests on Linux, Windows and macOS, the end-to-end self-test, attaches the zipped site with its `.sha256` to the GitHub release, and deploys GitHub Pages. The version lives only in `package.json`.
+Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
 
 ## Changes in 2.0.0
 
