@@ -190,6 +190,16 @@ main { padding: 1.4rem 1.6rem 3rem; min-width: 0; }
 .tile .value.good { color: var(--ok); }
 .charts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 1rem; }
 .chart-box { position: relative; height: 240px; }
+.time-chart { width: 100%; }
+.time-chart .u-legend { font-size: 0.8rem; color: var(--body); text-align: left; margin-top: 0.4rem; }
+.time-chart .u-legend th { position: static; background: none; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--body); }
+.time-chart .u-legend th, .time-chart .u-legend td { border: 0; padding: 0.1rem 0.5rem 0.1rem 0; white-space: nowrap; }
+.time-chart .u-legend tr:hover td { background: none; }
+.time-chart .u-legend .u-value { color: var(--ink); font-variant-numeric: tabular-nums; }
+.time-chart .u-legend .u-series:first-child { display: block; color: var(--muted); }
+.time-chart .u-legend .u-off { opacity: 0.35; }
+.time-chart .u-cursor-x, .time-chart .u-cursor-y { border-color: var(--muted) !important; }
+.time-chart .u-select { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 
 /* ------------------------------------------------------------------ controls */
 button, select, input, textarea {

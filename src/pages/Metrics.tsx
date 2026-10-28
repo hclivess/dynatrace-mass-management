@@ -1,14 +1,10 @@
-import { Chart, Filler, Legend, LinearScale, LineController, LineElement, PointElement, TimeSeriesScale, Tooltip, type ChartConfiguration } from "chart.js";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import type { MetricQueryResult } from "../api/types";
 import { useCurrent } from "../store/state";
 import { useAsync, useRoute } from "../ui/hooks";
 import { Async, PageHead, RangeSelect } from "../ui/Page";
 import { Table } from "../ui/Table";
-
-Chart.register(LineController, LineElement, PointElement, LinearScale, TimeSeriesScale, Tooltip, Legend, Filler);
-
-const PALETTE = ["#6c72ff", "#1fb5c9", "#f2a93b", "#e5537a", "#4fc27d", "#a36bff", "#3d8bfd", "#d9773e"];
+import { TimeChart } from "../ui/TimeChart";
 
 export function Metrics() {
   const { client } = useCurrent()!;
@@ -63,52 +59,21 @@ function seriesLabel(s: { metric: string; dimensions: string[]; dimensionMap?: R
   return named.join(" · ") || s.dimensions.join(" · ") || s.metric;
 }
 
+const MAX_SERIES = 20;
+
 function MetricChart({ data }: { data: MetricQueryResult }) {
-  const canvas = useRef<HTMLCanvasElement>(null);
   const series = data.result.flatMap((r) => r.data.map((d) => ({ metric: r.metricId, ...d })));
   const warnings = [...(data.warnings ?? []), ...data.result.flatMap((r) => r.warnings ?? [])];
-
-  useEffect(() => {
-    if (!canvas.current || !series.length) return;
-    const stamps = series.flatMap((s) => s.timestamps);
-    const ink = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#6b7480";
-    const config: ChartConfiguration<"line", { x: number; y: number | null }[]> = {
-      type: "line",
-      data: {
-        datasets: series.slice(0, 20).map((s, i) => ({
-          label: seriesLabel(s),
-          data: s.timestamps.map((t, j) => ({ x: t, y: s.values[j] ?? null })),
-          borderColor: PALETTE[i % PALETTE.length],
-          backgroundColor: PALETTE[i % PALETTE.length],
-          borderWidth: 1.6,
-          pointRadius: 0,
-          spanGaps: true,
-          tension: 0.2,
-        })),
-      },
-      options: {
-        animation: false,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-        scales: {
-          x: { type: "linear", min: Math.min(...stamps), max: Math.max(...stamps), ticks: { color: ink, callback: (v) => new Date(Number(v)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }), maxTicksLimit: 8 }, grid: { display: false } },
-          y: { ticks: { color: ink }, grid: { color: "rgba(127,127,127,.15)" } },
-        },
-        plugins: {
-          legend: { position: "bottom", labels: { color: ink, boxWidth: 10, boxHeight: 10 } },
-          tooltip: { callbacks: { title: (items) => new Date(Number(items[0]?.parsed.x)).toLocaleString() } },
-        },
-      },
-    };
-    const chart = new Chart(canvas.current, config);
-    return () => chart.destroy();
-  }, [data]);
+  const drawn = useMemo(
+    () => series.slice(0, MAX_SERIES).map((s) => ({ label: seriesLabel(s), timestamps: s.timestamps, values: s.values })),
+    [data],
+  );
 
   return (
     <div class="panel">
       {warnings.map((w) => <div class="notice warn" key={w}>{w}</div>)}
-      {series.length === 0 ? <p class="muted">The query returned no data.</p> : <div class="chart-box" style={{ height: "320px" }}><canvas ref={canvas} aria-label="Metric chart" role="img" /></div>}
-      <p class="muted" style={{ margin: "0.5rem 0 0" }}>{series.length} series · resolution {data.resolution}{series.length > 20 ? " · first 20 drawn" : ""}</p>
+      {series.length === 0 ? <p class="muted">The query returned no data.</p> : <TimeChart series={drawn} />}
+      <p class="muted" style={{ margin: "0.5rem 0 0" }}>{series.length} series · resolution {data.resolution}{series.length > MAX_SERIES ? ` · first ${MAX_SERIES} drawn` : ""}</p>
     </div>
   );
 }

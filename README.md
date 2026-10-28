@@ -114,6 +114,10 @@ The hosted site's "Try it live" uses a read-only Playground token stored as the 
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
 
+## Changes in 2.1.1
+
+- Metric charts use [uPlot](https://github.com/leeoniya/uPlot) instead of Chart.js: a crosshair with live values per series in the legend, smooth with many series and thousands of points, and the app download drops from 93 KB to 57 KB (gzipped). Runtime dependencies are now Preact and uPlot, nothing else.
+
 ## Changes in 2.1.0
 
 - **Try it live:** the hosted site opens the Dynatrace Playground with one click (or the link above). The demo is read-only twice over: the token it uses has only read scopes, and DMM refuses every change for it before a request leaves the browser. Dynatrace resets the Playground from time to time; if the demo token has expired, DMM says so and opens the sample data instead.
@@ -134,7 +138,7 @@ Fixes found by running every page against a real tenant (the Dynatrace Playgroun
 
 ## Changes in 2.0.0
 
-- **Rewritten as a static browser app** (TypeScript, Preact, Chart.js). Nothing to install: open the GitHub Pages URL, or unzip the release onto any web server. The Python/Tornado server of 1.x is gone. **Not compatible with 1.x**; your 1.x `secrets.json` can be imported once from the Environments page.
+- **Rewritten as a static browser app** (TypeScript, Preact). Nothing to install: open the GitHub Pages URL, or unzip the release onto any web server. The Python/Tornado server of 1.x is gone. **Not compatible with 1.x**; your 1.x `secrets.json` can be imported once from the Environments page.
 - **Current Dynatrace APIs.** Auto-tags, maintenance windows, management zones and host monitoring use Settings 2.0 instead of the deprecated Config API v1. Works with SaaS, the new platform URLs and Managed, with classic or platform tokens.
 - **New:** overview across all environments, copy settings between environments (validated, skips duplicates), monitoring-mode switching, entity tagging by selector, vulnerabilities, network zone editing, synthetic monitor toggles, CSV/JSON export on every table, sample data to try it without Dynatrace.
 - **Removed:** Account Management (users, groups, permissions). Dynatrace's Account Management API cannot be called from a browser.
