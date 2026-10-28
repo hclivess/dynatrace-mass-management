@@ -95,7 +95,7 @@ export function Vulnerabilities() {
   const columns: Column<SecurityProblem>[] = [
     { key: "id", label: "ID", value: (p) => p.displayId },
     { key: "title", label: "Title", value: (p) => p.title, wrap: true },
-    { key: "risk", label: "Risk", value: (p) => p.riskAssessment?.riskScore, render: (p) => <Badge kind={p.riskAssessment?.riskLevel === "CRITICAL" || p.riskAssessment?.riskLevel === "HIGH" ? "bad" : "warn"}>{humanize(p.riskAssessment?.riskLevel) || "?"} {p.riskAssessment?.riskScore ?? ""}</Badge> },
+    { key: "risk", label: "Risk", value: (p) => p.riskAssessment?.riskScore, render: (p) => (!p.riskAssessment || p.riskAssessment.riskScore < 0 ? "—" : <Badge kind={p.riskAssessment?.riskLevel === "CRITICAL" || p.riskAssessment?.riskLevel === "HIGH" ? "bad" : "warn"}>{humanize(p.riskAssessment?.riskLevel) || "?"} {p.riskAssessment?.riskScore ?? ""}</Badge>) },
     { key: "tech", label: "Technology", value: (p) => p.technology ?? "", render: (p) => ({ JAVA: "Java", NODE_JS: "Node.js", DOTNET: ".NET", PYTHON: "Python", GO: "Go", PHP: "PHP", KUBERNETES: "Kubernetes" })[p.technology ?? ""] ?? humanize(p.technology) },
     { key: "cve", label: "CVE", value: (p) => (p.cveIds ?? []).join(" ") },
     { key: "muted", label: "Muted", value: (p) => (p.muted ? "yes" : "") },

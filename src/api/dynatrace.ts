@@ -7,6 +7,9 @@ import type * as T from "./types";
  * Every endpoint here works with a classic API token (dt0c01.…) from a browser. Config API v1
  * calls of DMM 1.x were replaced by their Settings 2.0 schemas; see SCHEMAS in ./schemas.ts.
  */
+/** Lists that can grow without bound (problems, events) stop here; the page says so. */
+export const LIST_LIMIT = 5000;
+
 export class Dynatrace {
   readonly http: Http;
 
@@ -141,8 +144,9 @@ export class Dynatrace {
     const page = await this.http.paginate<T.Problem>(
       "/api/v2/problems",
       "problems",
-      { from: query.from ?? "now-24h", problemSelector: query.problemSelector, pageSize: 500, fields: "+evidenceDetails" },
+      { from: query.from ?? "now-24h", problemSelector: query.problemSelector, pageSize: 500 },
       signal,
+      LIST_LIMIT,
     );
     return page.items;
   }
@@ -157,6 +161,7 @@ export class Dynatrace {
       "events",
       { from: query.from ?? "now-24h", eventSelector: query.eventSelector, pageSize: 1000 },
       signal,
+      LIST_LIMIT,
     );
     return page.items;
   }
@@ -184,7 +189,8 @@ export class Dynatrace {
   // ------------------------------------------------------------------ SLOs
 
   async slos(from = "now-1w", signal?: AbortSignal): Promise<T.Slo[]> {
-    const page = await this.http.paginate<T.Slo>("/api/v2/slo", "slo", { from, pageSize: 500, evaluate: true }, signal);
+    // Dynatrace evaluates at most 25 SLOs per request.
+    const page = await this.http.paginate<T.Slo>("/api/v2/slo", "slo", { from, pageSize: 25, evaluate: true }, signal);
     return page.items;
   }
 
@@ -275,7 +281,7 @@ export class Dynatrace {
   hosts(signal?: AbortSignal): Promise<T.Entity[]> {
     return this.entities(
       'type("HOST")',
-      "+tags,+managementZones,+properties.monitoringMode,+properties.state,+properties.osType,+properties.installerVersion,+properties.hostGroupName,+properties.ipAddress,+properties.cpuCores,+properties.physicalMemory,+properties.logicalCpuCores",
+      "+tags,+managementZones,+lastSeenTms,+firstSeenTms,+properties.monitoringMode,+properties.state,+properties.osType,+properties.installerVersion,+properties.hostGroupName,+properties.ipAddress,+properties.cpuCores,+properties.physicalMemory,+properties.logicalCpuCores",
       "now-72h",
       signal,
     );

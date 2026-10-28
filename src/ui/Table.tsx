@@ -13,6 +13,8 @@ export interface Column<T> {
   width?: string;
   /** Long free text (titles, messages) may wrap; everything else stays on one line. */
   wrap?: boolean;
+  /** Very long values (cloud host names) are cut with an ellipsis; the full text is on hover. */
+  truncate?: boolean;
 }
 
 interface TableProps<T> {
@@ -147,7 +149,7 @@ export function Table<T>(props: TableProps<T>) {
                     </td>
                   )}
                   {columns.map((c) => (
-                    <td key={c.key} class={[c.align === "right" ? "num" : "", c.wrap ? "wrap" : ""].join(" ").trim()}>
+                    <td key={c.key} class={[c.align === "right" ? "num" : "", c.wrap ? "wrap" : "", c.truncate ? "truncate" : ""].join(" ").trim()} title={c.truncate ? String(c.value(row) ?? "") : undefined}>
                       {c.render ? c.render(row) : String(c.value(row) ?? "")}
                     </td>
                   ))}

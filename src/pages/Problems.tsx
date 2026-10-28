@@ -34,7 +34,7 @@ export function Problems() {
     { key: "severity", label: "Severity", value: (p) => p.severityLevel, render: (p) => <Badge kind={p.severityLevel === "AVAILABILITY" || p.severityLevel === "ERROR" ? "bad" : "warn"}>{humanize(p.severityLevel)}</Badge> },
     { key: "impact", label: "Impact", value: (p) => p.impactLevel, render: (p) => humanize(p.impactLevel) },
     { key: "status", label: "Status", value: (p) => p.status, render: (p) => <Badge kind={p.status === "OPEN" ? "bad" : "ok"}>{humanize(p.status)}</Badge> },
-    { key: "root", label: "Root cause", value: (p) => p.rootCauseEntity?.name ?? "" },
+    { key: "root", label: "Root cause", truncate: true, value: (p) => p.rootCauseEntity?.name ?? "" },
     { key: "affected", label: "Affected", align: "right", value: (p) => p.affectedEntities?.length ?? 0, render: (p) => <span title={(p.affectedEntities ?? []).map((e) => e.name).join(", ")}>{p.affectedEntities?.length ?? 0}</span> },
     { key: "start", label: "Started", value: (p) => p.startTime, render: (p) => time(p.startTime) },
   ];

@@ -82,7 +82,10 @@ export function Overview() {
     },
   });
 
-  const totals = FIGURES.map((f) => rows.reduce((sum, row) => sum + (row[f.key] && "value" in row[f.key]! ? (row[f.key] as { value: number }).value : 0), 0));
+  // A total is shown only once every environment has answered for it; "0" while loading would lie.
+  const totals = FIGURES.map((f) =>
+    rows.some((row) => !row[f.key]) ? undefined : rows.reduce((sum, row) => sum + ("value" in row[f.key]! ? (row[f.key] as { value: number }).value : 0), 0),
+  );
 
   return (
     <>
@@ -91,10 +94,10 @@ export function Overview() {
       <div class="grid" style={{ marginBottom: "1rem" }}>
         <Tile label="Environments" value={environments.length} />
         <Tile label="Hosts" value={totals[0]} />
-        <Tile label="Open problems" value={totals[1]} bad={totals[1]! > 0} />
-        <Tile label="Critical/high vulnerabilities" value={totals[2]} bad={totals[2]! > 0} />
-        <Tile label="ActiveGates offline" value={totals[3]} bad={totals[3]! > 0} />
-        <Tile label="SLOs failing" value={totals[4]} bad={totals[4]! > 0} />
+        <Tile label="Open problems" value={totals[1]} bad={(totals[1] ?? 0) > 0} />
+        <Tile label="Critical/high vulnerabilities" value={totals[2]} bad={(totals[2] ?? 0) > 0} />
+        <Tile label="ActiveGates offline" value={totals[3]} bad={(totals[3] ?? 0) > 0} />
+        <Tile label="SLOs failing" value={totals[4]} bad={(totals[4] ?? 0) > 0} />
       </div>
       <Table
         name="environments"

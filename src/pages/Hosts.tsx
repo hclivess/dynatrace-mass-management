@@ -25,14 +25,16 @@ export function Hosts() {
   const [busy, run] = useBusy();
   const state = useAsync(
     async (signal) => {
+      // Host units and agent versions come from the OneAgent inventory, which some tokens cannot
+      // read; the page still works without them and says so.
       const [hosts, monitoring, agents] = await Promise.all([
         client.hosts(signal),
         client.settings(HOST_MONITORING, undefined, signal).catch(() => [] as SettingsObject[]),
-        client.oneAgents(signal).catch(() => []),
+        client.oneAgents(signal).catch(() => null),
       ]);
       const byHost = new Map(monitoring.map((o) => [o.scope, o]));
-      const agentByHost = new Map(agents.map((a) => [a.hostInfo.entityId, a]));
-      return hosts.map((host): HostRow => {
+      const agentByHost = new Map((agents ?? []).map((a) => [a.hostInfo.entityId, a]));
+      const rows = hosts.map((host): HostRow => {
         const setting = byHost.get(host.entityId);
         const agent = agentByHost.get(host.entityId);
         const v = agent?.agentVersion;
@@ -42,9 +44,11 @@ export function Hosts() {
           enabled: setting ? setting.value.enabled !== false : true,
           mode: String(host.properties?.monitoringMode ?? agent?.hostInfo.monitoringMode ?? ""),
           hostUnits: agent ? Number(agent.hostInfo.consumedHostUnits) || undefined : undefined,
-          agentVersion: v ? `${v.major}.${v.minor}.${v.revision}` : String(host.properties?.installerVersion ?? ""),
+          // installerVersion is "1.345.93.20261014-101500"; the build stamp is noise in a table.
+          agentVersion: v ? `${v.major}.${v.minor}.${v.revision}` : String(host.properties?.installerVersion ?? "").split(".").slice(0, 3).join("."),
         };
       });
+      return { rows, hostUnitsKnown: agents !== null };
     },
     [client],
   );
@@ -91,7 +95,7 @@ export function Hosts() {
     });
 
   const columns: Column<HostRow>[] = [
-    { key: "name", label: "Host", value: (r) => r.host.displayName, render: (r) => <a href={client.uiUrl(`/#newhosts/hostdetails;id=${r.host.entityId}`)} target="_blank" rel="noreferrer">{r.host.displayName}</a> },
+    { key: "name", label: "Host", truncate: true, value: (r) => r.host.displayName, render: (r) => <a href={client.uiUrl(`/#newhosts/hostdetails;id=${r.host.entityId}`)} target="_blank" rel="noreferrer">{r.host.displayName}</a> },
     { key: "monitoring", label: "Monitoring", value: (r) => (r.enabled ? "enabled" : "disabled"), render: (r) => <Badge kind={r.enabled ? "ok" : "bad"}>{r.enabled ? "enabled" : "disabled"}</Badge> },
     { key: "mode", label: "Mode", value: (r) => r.mode, render: (r) => humanize(r.mode) },
     { key: "group", label: "Host group", value: (r) => String(r.host.properties?.hostGroupName ?? "") },
@@ -99,25 +103,25 @@ export function Hosts() {
     { key: "units", label: "Host units", align: "right", value: (r) => r.hostUnits },
     { key: "agent", label: "Agent", value: (r) => r.agentVersion },
     { key: "seen", label: "Last seen", value: (r) => r.host.lastSeenTms, render: (r) => <Ago ms={r.host.lastSeenTms} /> },
-    { key: "tags", label: "Tags", value: (r) => (r.host.tags ?? []).map((t) => t.stringRepresentation).join(" "), render: (r) => <div class="tags">{(r.host.tags ?? []).slice(0, 1).map((t) => <span class="badge" key={t.stringRepresentation}>{t.stringRepresentation}</span>)}{(r.host.tags?.length ?? 0) > 1 && <span class="muted">+{r.host.tags!.length - 1}</span>}</div> },
+    { key: "tags", label: "Tags", truncate: true, value: (r) => (r.host.tags ?? []).map((t) => t.stringRepresentation).join(" "), render: (r) => <div class="tags">{(r.host.tags ?? []).slice(0, 1).map((t) => <span class="badge" key={t.stringRepresentation}>{t.stringRepresentation}</span>)}{(r.host.tags?.length ?? 0) > 1 && <span class="muted">+{r.host.tags!.length - 1}</span>}</div> },
   ];
 
   return (
     <>
       <PageHead title="Hosts" reload={state.reload} loading={state.loading} />
       <Async state={state} what="Loading hosts">
-        {(rows) => (
+        {({ rows, hostUnitsKnown }) => (
           <>
             <div class="grid" style={{ marginBottom: "1rem" }}>
               <div class="tile"><div class="label">Hosts</div><div class="value">{rows.length}</div></div>
               <div class="tile"><div class="label">Monitoring disabled</div><div class={`value${rows.some((r) => !r.enabled) ? " bad" : ""}`}>{rows.filter((r) => !r.enabled).length}</div></div>
-              <div class="tile"><div class="label">Host units</div><div class="value">{round(rows.reduce((s, r) => s + (r.hostUnits ?? 0), 0))}</div></div>
+              <div class="tile" title={hostUnitsKnown ? undefined : "The token cannot read the OneAgent inventory (oneAgents.read)."}><div class="label">Host units</div><div class="value">{hostUnitsKnown ? round(rows.reduce((s, r) => s + (r.hostUnits ?? 0), 0)) : "n/a"}</div></div>
               <div class="tile"><div class="label">Host groups</div><div class="value">{new Set(rows.map((r) => r.host.properties?.hostGroupName).filter(Boolean)).size}</div></div>
             </div>
             <Table
               name="hosts"
               rows={rows}
-              columns={columns}
+              columns={hostUnitsKnown ? columns : columns.filter((c) => c.key !== "units")}
               rowKey={(r) => r.host.entityId}
               selectable
               empty="No hosts reported in the last 3 days."

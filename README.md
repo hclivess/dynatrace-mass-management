@@ -4,9 +4,11 @@ Manage many Dynatrace environments from one browser tab. Nothing to install, no 
 
 **[Open DMM →](https://hclivess.github.io/dynatrace-mass-management/)** · or try it with the built-in sample data, no Dynatrace account needed.
 
-![Hosts page with five hosts selected for a bulk action](docs/thumb.png)
+![Hosts page on the Dynatrace Playground with eleven hosts selected for a bulk action](docs/thumb.png)
 
-![Overview of three environments, disabling monitoring on a host group, copying auto-tag rules to two environments, charting CPU](docs/demo.gif)
+![Overview, selecting hosts, problems, SLOs and a CPU chart, recorded on the Dynatrace Playground](docs/demo.gif)
+
+*Screens recorded read-only on the public [Dynatrace Playground](https://wkf10640.apps.dynatrace.com/).*
 
 ## What it does
 
@@ -94,12 +96,27 @@ npm test            # unit tests: URL parsing, pagination, retries, errors, vaul
 npm run build       # → dist/, static files
 npx playwright install chromium
 npm run e2e         # self-test: the built site against a mock Dynatrace (mock/), 26 scenarios
-node scripts/screenshot.mjs   # docs/thumb.png and docs/demo.gif from a real run
+node scripts/screenshot.mjs   # docs/thumb.png and docs/demo.gif from a real run (mock data)
+DT_DEMO_TOKEN=… node scripts/screenshot.mjs           # the same, on the Dynatrace Playground
+DT_URL=abc12345 DT_TOKEN=… node scripts/smoke-live.mjs # every page against a real tenant
 ```
+
+Both live scripts only read: every request that would change something is blocked before it leaves the browser.
 
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
+
+## Changes in 2.0.1
+
+Fixes found by running every page against a real tenant (the Dynatrace Playground):
+
+- **Problems** failed with "Page size can't be larger than 10 if the fields parameter is set"; **SLOs** failed with "Exceeded the limit of 25 SLOs that can be evaluated at once". Both work now, and the mock enforces both limits so the self-test catches them.
+- Problems and events stop at 5,000 rows instead of downloading a whole busy tenant (events: 17 s → 4 s).
+- Hosts show when they were last seen; long cloud host names are shortened with the full name on hover; host units say "n/a" instead of 0 when the token cannot read the OneAgent inventory.
+- The overview no longer shows 0 while figures are still loading.
+- Metric charts are labelled with host and service names instead of entity IDs.
+- New `scripts/smoke-live.mjs`: a read-only walk through every page against any tenant.
 
 ## Changes in 2.0.0
 

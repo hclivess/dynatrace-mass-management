@@ -14,10 +14,10 @@ export function Entities() {
   const [viewing, setViewing] = useState<Entity | null>(null);
   const [tagging, setTagging] = useState<{ entities: Entity[]; mode: "add" | "remove" } | null>(null);
   const types = useAsync((signal) => client.entityTypes(signal), [client]);
-  const state = useAsync((signal) => client.entities(applied, "+tags,+managementZones", "now-72h", signal), [client, applied]);
+  const state = useAsync((signal) => client.entities(applied, "+tags,+managementZones,+lastSeenTms", "now-72h", signal), [client, applied]);
 
   const columns: Column<Entity>[] = [
-    { key: "name", label: "Name", value: (e) => e.displayName },
+    { key: "name", label: "Name", truncate: true, value: (e) => e.displayName },
     { key: "id", label: "Entity ID", value: (e) => e.entityId, render: (e) => <code>{e.entityId}</code> },
     { key: "tags", label: "Tags", value: (e) => (e.tags ?? []).map((t) => t.stringRepresentation).join(" "), render: (e) => <div class="tags">{(e.tags ?? []).slice(0, 5).map((t) => <span class="badge" key={t.stringRepresentation}>{t.stringRepresentation}</span>)}</div> },
     { key: "zones", label: "Management zones", value: (e) => (e.managementZones ?? []).map((z) => z.name).join(", ") },

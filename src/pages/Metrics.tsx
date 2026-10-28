@@ -13,7 +13,7 @@ const PALETTE = ["#0e6c70", "#c2410c", "#6d28d9", "#15803d", "#b91c1c", "#0369a1
 export function Metrics() {
   const { client } = useCurrent()!;
   const { params } = useRoute();
-  const [selector, setSelector] = useState(params.get("q") ?? "builtin:host.cpu.usage:splitBy(\"dt.entity.host\"):sort(value(avg,descending)):limit(8)");
+  const [selector, setSelector] = useState(params.get("q") ?? "builtin:host.cpu.usage:splitBy(\"dt.entity.host\"):sort(value(avg,descending)):limit(8):names");
   const [from, setFrom] = useState("now-24h");
   const [query, setQuery] = useState<{ selector: string; from: string } | null>(null);
 
@@ -56,6 +56,13 @@ export function Metrics() {
   );
 }
 
+/** With :names Dynatrace adds "<dim>.name"; show names instead of HOST-… IDs where it did. */
+function seriesLabel(s: { metric: string; dimensions: string[]; dimensionMap?: Record<string, string> }): string {
+  const map = s.dimensionMap ?? {};
+  const named = Object.keys(map).filter((k) => !map[`${k}.name`]).map((k) => map[k]);
+  return named.join(" · ") || s.dimensions.join(" · ") || s.metric;
+}
+
 function MetricChart({ data }: { data: MetricQueryResult }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const series = data.result.flatMap((r) => r.data.map((d) => ({ metric: r.metricId, ...d })));
@@ -69,7 +76,7 @@ function MetricChart({ data }: { data: MetricQueryResult }) {
       type: "line",
       data: {
         datasets: series.slice(0, 20).map((s, i) => ({
-          label: s.dimensions.join(" · ") || s.metric,
+          label: seriesLabel(s),
           data: s.timestamps.map((t, j) => ({ x: t, y: s.values[j] ?? null })),
           borderColor: PALETTE[i % PALETTE.length],
           backgroundColor: PALETTE[i % PALETTE.length],

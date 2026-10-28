@@ -101,7 +101,7 @@ export class Http {
    * Follows `nextPageKey`. Dynatrace rejects a follow-up request that repeats the original
    * filters, so every page after the first carries the key and nothing else.
    */
-  async paginate<T>(path: string, itemsKey: string, query: Query = {}, signal?: AbortSignal): Promise<Page<T>> {
+  async paginate<T>(path: string, itemsKey: string, query: Query = {}, signal?: AbortSignal, limit = Infinity): Promise<Page<T> & { truncated: boolean }> {
     const items: T[] = [];
     let page = await this.get<Record<string, unknown>>(path, query, signal);
     const totalCount = typeof page.totalCount === "number" ? page.totalCount : undefined;
@@ -110,9 +110,10 @@ export class Http {
       if (Array.isArray(chunk)) items.push(...(chunk as T[]));
       const next = page.nextPageKey;
       if (typeof next !== "string" || !next || n >= MAX_PAGES) break;
+      if (items.length >= limit) return { items: items.slice(0, limit), totalCount, truncated: true };
       page = await this.get<Record<string, unknown>>(path, { nextPageKey: next }, signal);
     }
-    return { items, totalCount };
+    return { items, totalCount, truncated: false };
   }
 }
 

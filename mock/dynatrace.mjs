@@ -206,6 +206,13 @@ function route(e, method, path, url, body) {
     }
   }
 
+  // Limits the real API enforces, so the self-test catches requests that would fail there.
+  if (method === "GET" && path === "/api/v2/problems" && url.searchParams.has("fields") && Number(url.searchParams.get("pageSize")) > 10) {
+    return ok({ error: { code: 400, message: "Page size can't be larger than 10 if the fields parameter is set." } }, 400);
+  }
+  if (method === "GET" && path === "/api/v2/slo" && url.searchParams.get("evaluate") === "true" && Number(url.searchParams.get("pageSize") ?? 10) > 25) {
+    return ok({ error: { code: 400, message: "Exceeded the limit of 25 SLOs that can be evaluated at once." } }, 400);
+  }
   if (method === "GET" && path === "/api/v2/problems") {
     const selector = url.searchParams.get("problemSelector") ?? "";
     const status = selector.match(/status\("(\w+)"\)/)?.[1];
@@ -224,7 +231,7 @@ function route(e, method, path, url, body) {
   if (method === "GET" && path === "/api/v2/metrics/query") {
     const selector = url.searchParams.get("metricSelector") ?? "";
     const metricId = selector.split(":").slice(0, 3).join(":").replace(/:splitBy.*$/, "").replace(/:(sort|limit).*$/, "");
-    const data = e.hosts.slice(0, 6).map((h, i) => ({ dimensions: [h.displayName], dimensionMap: { "dt.entity.host": h.entityId }, ...series(i + 1 + e.name.length) }));
+    const data = e.hosts.slice(0, 6).map((h, i) => ({ dimensions: [h.entityId, h.displayName], dimensionMap: { "dt.entity.host": h.entityId, "dt.entity.host.name": h.displayName }, ...series(i + 1 + e.name.length) }));
     return ok({ totalCount: data.length, resolution: "15m", result: [{ metricId, data }] });
   }
 
