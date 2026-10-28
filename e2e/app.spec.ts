@@ -145,3 +145,11 @@ test("a blocked Dynatrace connection is reported as blocked, not as an outage", 
   await app.goto("/#/hosts");
   await expect(app.locator(".error-box")).toContainText("Ad and privacy blockers often block Dynatrace domains");
 });
+
+test("the release works when index.html is opened straight from disk", async ({ app }) => {
+  const { pathToFileURL } = await import("node:url");
+  await app.goto(pathToFileURL(`${process.cwd()}/dist/index.html`).href);
+  await app.getByRole("button", { name: /Try it with sample data/ }).click();
+  await expect(app.locator(".tile", { hasText: /^Hosts/ }).locator(".value")).toHaveText("38");
+  await expect(app.locator(".sidebar")).toHaveCSS("background-color", "rgb(20, 21, 43)");
+});

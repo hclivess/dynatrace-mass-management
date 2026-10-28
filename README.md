@@ -31,7 +31,7 @@ All requests go **directly from your browser to Dynatrace**. There is no DMM ser
 ## Open it
 
 - **Hosted:** <https://hclivess.github.io/dynatrace-mass-management/>
-- **Offline / self-hosted:** download `dynatrace-mass-management-<version>-web.zip` from the [latest release](https://github.com/hclivess/dynatrace-mass-management/releases/latest), unzip, and serve the folder with any static web server (`npx serve`, `python -m http.server`, nginx, an internal share). Browsers do not run module scripts from `file://`, so double-clicking `index.html` is not enough.
+- **Offline / self-hosted:** download `dynatrace-mass-management-<version>-web.zip` from the [latest release](https://github.com/hclivess/dynatrace-mass-management/releases/latest), unzip, and **double-click `index.html`**. It also works from any static web server or internal share. The release zip has no demo token in it; bring your own token, or use the sample data.
 - **From source:** `npm ci && npm run dev`
 
 Then **Environments → Add environment**: the tenant ID or any URL you copy from Dynatrace, and a token.
@@ -113,6 +113,10 @@ The hosted site's "Try it live" uses a read-only Playground token stored as the 
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
+
+## Changes in 2.1.3
+
+- **The release zip opens by double-clicking `index.html`.** It used to show a blank page: browsers do not run module scripts from disk. The app is now one classic script, so it runs from `file://`, a web server or GitHub Pages alike. The self-test opens the built `index.html` from disk to keep it that way, and the release fails if a token ever ends up in the zip.
 
 ## Changes in 2.1.2
 
