@@ -72,7 +72,7 @@ export class Http {
         if (options.signal?.aborted) throw error;
         if (timeout.aborted) throw new ApiError(`No answer from ${new URL(url).host} within 30 s.`, 0);
         throw new ApiError(
-          `Cannot reach ${new URL(url).host}. Check the URL, your network, and that the browser is not blocking the request.`,
+          `Cannot reach ${new URL(url).host}. Ad and privacy blockers often block Dynatrace domains (they carry Dynatrace's own tracking beacons): allow ${new URL(url).host} for this site, or check the URL and your network.`,
           0,
         );
       }

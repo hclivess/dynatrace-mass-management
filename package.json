@@ -1,6 +1,6 @@
 {
   "name": "dynatrace-mass-management",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "private": true,
   "type": "module",
   "description": "Manage many Dynatrace environments from one browser tab. No install, no server.",

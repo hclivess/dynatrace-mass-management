@@ -89,7 +89,7 @@ Some classic APIs DMM uses are deprecated by Dynatrace but still work, and the p
 | "The token was rejected (401)" | Token expired, revoked, or pasted into the wrong environment. |
 | "The token lacks a permission (403, …)" | Add the scope from the table above, or use *Test* on the Environments page to list what is missing. |
 | "n/a" in the overview | Hover it: that figure needs a scope this token does not have. |
-| "Cannot reach …" | The URL is wrong, a VPN is required, or a Managed cluster does not allow cross-site requests. Self-host DMM on the same domain as the cluster. |
+| "Cannot reach …" | Most often an ad or privacy blocker: lists such as EasyPrivacy block `*.live.dynatrace.com` because Dynatrace's tracking beacons use it. Allow it for this site. Otherwise the URL is wrong, a VPN is required, or a Managed cluster does not allow cross-site requests (self-host DMM on the cluster's domain). |
 | A copied setting fails in the target | It references an ID (management zone, alerting profile, entity) that only exists in the source. Copy the referenced object first, or fix the ID after copying. |
 | Bulk host changes on thousands of hosts | Filter by host group first; writes go in batches of 100. |
 
@@ -113,6 +113,10 @@ The hosted site's "Try it live" uses a read-only Playground token stored as the 
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
+
+## Changes in 2.1.2
+
+- A connection the browser blocks (typically an ad or privacy blocker filtering `*.live.dynatrace.com`) is now reported as exactly that, with what to allow. The live demo used to blame a Playground reset for any failure.
 
 ## Changes in 2.1.1
 

@@ -138,3 +138,10 @@ test("the theme switch sets and remembers dark mode", async ({ app }) => {
   await app.getByRole("radio", { name: "System" }).click();
   await expect(app.locator("html")).not.toHaveAttribute("data-theme", /./);
 });
+
+test("a blocked Dynatrace connection is reported as blocked, not as an outage", async ({ app }) => {
+  await withEnvironments(app, [{ id: "blocked", name: "Blocked", url: `${MOCK}/production`, token: "dt0c01.MOCK" }]);
+  await app.route("http://localhost:8787/**", (route) => route.abort("blockedbyclient"));
+  await app.goto("/#/hosts");
+  await expect(app.locator(".error-box")).toContainText("Ad and privacy blockers often block Dynatrace domains");
+});
