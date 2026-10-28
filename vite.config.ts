@@ -1,34 +1,53 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { defineConfig, type Plugin } from "vitest/config";
 import preact from "@preact/preset-vite";
 import pkg from "./package.json" with { type: "json" };
 
 /**
- * Browsers refuse module scripts and crossorigin requests on pages opened from disk (file://), so
- * the release zip would open to a blank page. One classic script with no crossorigin attribute
- * runs anywhere: GitHub Pages, any web server, or a double-clicked index.html.
+ * Everything goes into index.html: one classic inline script (styles included) and the icon as a
+ * data URI. Browsers refuse module scripts and cross-file loads on pages opened from disk, and
+ * Windows opens index.html from a zip without the rest of the folder; a single self-contained file
+ * works there, from any web server, and on GitHub Pages alike. The Content-Security-Policy allows
+ * exactly that script by its SHA-256 hash, and nothing else inline.
  */
-function classicScript(): Plugin {
+function singleFile(): Plugin {
   return {
-    name: "dmm-classic-script",
+    name: "dmm-single-file",
     apply: "build",
     enforce: "post",
-    transformIndexHtml(html) {
-      return html
-        .replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/, '<script defer src="$1"></script>')
-        .replace(/ crossorigin(?=[\s>])/g, "");
+    generateBundle(_options, bundle) {
+      const html = bundle["index.html"];
+      if (!html || html.type !== "asset") throw new Error("index.html missing from the bundle");
+      let page = String(html.source);
+      for (const [name, chunk] of Object.entries(bundle)) {
+        if (chunk.type !== "chunk") continue;
+        const code = chunk.code.replace(/<\/script/gi, "<\\/script");
+        const hash = createHash("sha256").update(code).digest("base64");
+        page = page
+          // Inline scripts cannot be deferred, so it goes last in <body>, after the element it mounts into.
+          .replace(new RegExp(`\\s*<script[^>]*src="\\./${name}"[^>]*></script>`), "")
+          .replace("</body>", () => `<script>${code}</script>\n  </body>`)
+          .replace("script-src 'self'", `script-src 'sha256-${hash}'`);
+        delete bundle[name];
+        delete bundle[`${name}.map`];
+      }
+      const icon = readFileSync("public/icon.svg", "utf8");
+      page = page.replace('href="./icon.svg"', `href="data:image/svg+xml,${encodeURIComponent(icon)}"`);
+      if (/<script[^>]*src=/.test(page) || /<link[^>]*stylesheet/.test(page)) throw new Error("index.html still loads another file");
+      html.source = page;
     },
   };
 }
 
 export default defineConfig({
-  // Relative asset paths: the same build works on GitHub Pages, from a zip, or behind any prefix.
   base: "./",
-  plugins: [preact(), classicScript()],
+  plugins: [preact(), singleFile()],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   build: {
     target: "es2022",
-    sourcemap: true,
     modulePreload: false,
+    copyPublicDir: false,
     rollupOptions: { output: { format: "iife", inlineDynamicImports: true } },
   },
   test: { environment: "node", include: ["tests/**/*.test.ts"] },
