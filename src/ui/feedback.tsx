@@ -36,6 +36,8 @@ export function Toasts() {
   useEffect(() => {
     const listener = () => force((n) => n + 1);
     toastListeners.add(listener);
+    // A toast raised while the app was mounting (before this listener existed) still shows.
+    listener();
     return () => void toastListeners.delete(listener);
   }, []);
   return (
@@ -98,6 +100,7 @@ export function ConfirmHost() {
   useEffect(() => {
     const listener = () => force((n) => n + 1);
     confirmListeners.add(listener);
+    listener();
     return () => void confirmListeners.delete(listener);
   }, []);
   if (!pendingConfirm) return null;

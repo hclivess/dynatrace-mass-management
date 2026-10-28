@@ -2,8 +2,7 @@ import { ENVIRONMENTS, expect, MOCK, test, withEnvironments } from "./fixtures";
 
 test("adds an environment through the form and checks its token", async ({ app }) => {
   await app.goto("/");
-  await expect(app.getByText("No environments yet")).toBeVisible();
-  await app.getByRole("button", { name: "Add environment" }).click();
+  await app.getByRole("button", { name: /Add your environment/ }).click();
   await app.getByLabel("Environment URL or tenant ID").fill(`${MOCK}/production`);
   await app.getByLabel("Name").fill("Production");
   await app.getByLabel("API token").fill("dt0c01.MOCK.production");
@@ -111,8 +110,31 @@ for (const [path, title] of PAGES) {
 test("sample data works with no Dynatrace and no network", async ({ app }) => {
   await app.route(/^(?!http:\/\/localhost:4173)/, (route) => route.abort());
   await app.goto("/");
-  await app.getByRole("button", { name: "Try it with sample data" }).click();
+  await app.getByRole("button", { name: /Try it with sample data/ }).click();
   await expect(app.locator(".tile", { hasText: /^Hosts/ }).locator(".value")).toHaveText("38");
   await app.getByRole("link", { name: "Hosts" }).click();
   await expect(app.locator("tbody tr")).toHaveCount(24);
+});
+
+test("a #/try/sample link opens the sample data directly", async ({ app }) => {
+  await app.goto("/#/try/sample");
+  await expect(app.getByRole("heading", { name: "All environments" })).toBeVisible();
+  await expect(app.locator(".tile", { hasText: /^Hosts/ }).locator(".value")).toHaveText("38");
+});
+
+test("without a built-in token the Playground link falls back to sample data", async ({ app }) => {
+  await app.goto("/#/try/playground");
+  await expect(app.getByText(/no Playground demo built in/)).toBeVisible();
+  await expect(app.locator(".tile", { hasText: /^Hosts/ }).locator(".value")).toHaveText("38");
+});
+
+test("the theme switch sets and remembers dark mode", async ({ app }) => {
+  await withEnvironments(app);
+  await app.goto("/#/hosts");
+  await app.getByRole("radio", { name: "Dark" }).click();
+  await expect(app.locator("html")).toHaveAttribute("data-theme", "dark");
+  await app.reload();
+  await expect(app.locator("html")).toHaveAttribute("data-theme", "dark");
+  await app.getByRole("radio", { name: "System" }).click();
+  await expect(app.locator("html")).not.toHaveAttribute("data-theme", /./);
 });

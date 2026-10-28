@@ -114,10 +114,12 @@ if (onlyShots) {
       await pause(1800);
       await page.getByRole("link", { name: "Problems" }).click();
       await settle();
-      await pause(1800);
+      await page.locator("tbody tr").first().waitFor({ timeout: 60000 }).catch(() => {});
+      await pause(2000);
       await page.getByRole("link", { name: "SLOs" }).click();
       await settle();
-      await pause(1800);
+      await page.locator("tbody tr").first().waitFor({ timeout: 60000 }).catch(() => {});
+      await pause(2200);
       await page.getByRole("link", { name: "Metric explorer" }).click();
       await settle();
       await pause(500);

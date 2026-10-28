@@ -119,7 +119,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Only the hosted site gets the read-only Playground token; the release zip never carries one.
       - run: npm run build
+        env:
+          VITE_PLAYGROUND_TOKEN: ${{ secrets.DMM_PLAYGROUND_TOKEN }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

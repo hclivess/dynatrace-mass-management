@@ -13,6 +13,8 @@ export interface Environment {
   /** What the user entered; the API root is derived from it on every load. */
   url: string;
   token: string;
+  /** The public Playground demo: DMM refuses every change, whatever the token allows. */
+  readOnly?: boolean;
 }
 
 export interface SealedVault {
@@ -149,11 +151,11 @@ function validate(value: unknown): Environment[] {
   if (!Array.isArray(value)) throw new Error("Expected a list of environments.");
   return value.map((env, i) => {
     if (!isRecord(env)) throw new Error(`Entry ${i + 1} is not an environment.`);
-    const { id, name, url, token } = env;
+    const { id, name, url, token, readOnly } = env;
     if (typeof name !== "string" || typeof url !== "string" || typeof token !== "string") {
       throw new Error(`Entry ${i + 1} needs "name", "url" and "token".`);
     }
-    return { id: typeof id === "string" && id ? id : newId(), name, url, token };
+    return { id: typeof id === "string" && id ? id : newId(), name, url, token, ...(readOnly === true ? { readOnly } : {}) };
   });
 }
 

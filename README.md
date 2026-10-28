@@ -2,13 +2,18 @@
 
 Manage many Dynatrace environments from one browser tab. Nothing to install, no server: open the page, paste a token, go.
 
-**[Open DMM →](https://hclivess.github.io/dynatrace-mass-management/)** · or try it with the built-in sample data, no Dynatrace account needed.
+**[Open DMM →](https://hclivess.github.io/dynatrace-mass-management/)**
+
+Try it without a Dynatrace account:
+
+- **[Live on the Dynatrace Playground →](https://hclivess.github.io/dynatrace-mass-management/#/try/playground)** real hosts, problems, SLOs and metrics from Dynatrace's public demo environment, read-only.
+- **[With sample data →](https://hclivess.github.io/dynatrace-mass-management/#/try/sample)** three invented environments answered inside the page; every feature works, including bulk changes.
 
 ![Hosts page on the Dynatrace Playground with eleven hosts selected for a bulk action](docs/thumb.png)
 
 ![Overview, selecting hosts, problems, SLOs and a CPU chart, recorded on the Dynatrace Playground](docs/demo.gif)
 
-*Screens recorded read-only on the public [Dynatrace Playground](https://wkf10640.apps.dynatrace.com/).*
+*Screens recorded read-only on the public [Dynatrace Playground](https://wkf10640.apps.dynatrace.com/). DMM is an independent open-source tool, not affiliated with or endorsed by Dynatrace.*
 
 ## What it does
 
@@ -103,9 +108,18 @@ DT_URL=abc12345 DT_TOKEN=… node scripts/smoke-live.mjs # every page against a 
 
 Both live scripts only read: every request that would change something is blocked before it leaves the browser.
 
+The hosted site's "Try it live" uses a read-only Playground token stored as the `DMM_PLAYGROUND_TOKEN` repository secret and injected only into the GitHub Pages build (`VITE_PLAYGROUND_TOKEN`). When the Playground is reset, create a new read-only token there, update the secret, and re-run the workflow on `main`.
+
 `npm run mock` starts the mock on <http://localhost:8787/e/production> (also `staging`, `development`; token `dt0c01.MOCK…`). All its data is invented.
 
 Every push runs the tests on Linux, Windows and macOS and the end-to-end self-test. A push to `main` then deploys GitHub Pages; a tag `v*` attaches the zipped site with its `.sha256` to the GitHub release. The version lives only in `package.json`.
+
+## Changes in 2.1.0
+
+- **Try it live:** the hosted site opens the Dynatrace Playground with one click (or the link above). The demo is read-only twice over: the token it uses has only read scopes, and DMM refuses every change for it before a request leaves the browser. Dynatrace resets the Playground from time to time; if the demo token has expired, DMM says so and opens the sample data instead.
+- **New look:** dark navy sidebar with icons, a top bar with the environment switcher, status pills, and **light, dark and system themes** (the switch is top right; your choice is remembered in this browser).
+- A welcome screen with the three ways in: the live Playground, sample data, or your own environment.
+- Fixed: a message raised while the page was still starting up was never shown.
 
 ## Changes in 2.0.1
 

@@ -68,3 +68,17 @@ describe("retryDelay", () => {
     expect(retryDelay({ headers: new Headers() }, 2)).toBe(4000);
   });
 });
+
+describe("read-only demo", () => {
+  it("refuses every change before it leaves the browser, but still reads", async () => {
+    const fetchMock = vi.fn(async () => json({ ok: true }));
+    const http = new Http("https://t.live.dynatrace.com", "x", fetchMock as unknown as typeof fetch, true);
+    await expect(http.post("/api/v2/settings/objects", [])).rejects.toThrow(/read-only demo/);
+    await expect(http.delete("/api/v2/tags")).rejects.toThrow(/read-only demo/);
+    await expect(http.put("/api/v2/networkZones/x", {})).rejects.toThrow(/read-only demo/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await http.get("/api/v2/entities");
+    await http.post("/api/v2/apiTokens/lookup", { token: "x" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});

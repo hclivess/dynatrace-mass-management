@@ -1,16 +1,12 @@
 import type { ComponentChildren } from "preact";
-import { useCurrent } from "../store/state";
 import { ErrorBox, Loading } from "./feedback";
 import type { AsyncState } from "./hooks";
 
-/** Heading row shared by every per-environment page: title, environment, reload, page actions. */
+/** Heading row shared by every page: title, page actions, reload. The environment is in the top bar. */
 export function PageHead(props: { title: string; reload?: () => void; loading?: boolean; global?: boolean; children?: ComponentChildren }) {
-  const selected = useCurrent();
-  const current = props.global ? null : selected;
   return (
     <div class="page-head">
       <h1>{props.title}</h1>
-      {current && <span class="env-tag">{current.env.name}</span>}
       <span class="spacer" />
       {props.children}
       {props.reload && (

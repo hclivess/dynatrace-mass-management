@@ -17,8 +17,9 @@ export class Dynatrace {
     apiRoot: string,
     private readonly token: string,
     fetchImpl?: typeof fetch,
+    readOnly = false,
   ) {
-    this.http = new Http(apiRoot, token, fetchImpl);
+    this.http = new Http(apiRoot, token, fetchImpl, readOnly);
   }
 
   get apiRoot(): string {

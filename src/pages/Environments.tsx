@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
-import { demoEnvironments } from "../api/demo";
+import { playgroundEnvironment } from "../api/demo";
+import { tryDemo } from "../api/try";
 import { parseEnvironmentUrl } from "../api/environment";
 import { REQUIRED_SCOPES } from "../api/scopes";
 import { clientFor, getState, isRemembered, rememberOnDevice, setEnvironments, useAppState } from "../store/state";
@@ -51,19 +52,7 @@ export function Environments() {
       </p>
 
       {environments.length === 0 ? (
-        <div class="notice">
-          <p style={{ margin: "0 0 0.6rem" }}>No environments yet. Add one with its URL and an API token, or import a file.</p>
-          <button
-            type="button"
-            onClick={async () => {
-              await setEnvironments(demoEnvironments());
-              location.hash = "#/";
-            }}
-          >
-            Try it with sample data
-          </button>{" "}
-          <span class="muted">Three invented environments, answered inside this page. Nothing is sent anywhere.</span>
-        </div>
+        <Welcome onAdd={() => setEditing({ id: newId(), name: "", url: "", token: "" })} />
       ) : (
         <ul class="env-list">
           {environments.map((env) => (
@@ -91,9 +80,11 @@ export function Environments() {
         <button type="button" onClick={importEnvs}>
           Import…
         </button>
-        <button type="button" disabled={!environments.length} onClick={() => setAskPassphrase("export")}>
-          Export encrypted…
-        </button>
+        {environments.length > 0 && (
+          <button type="button" onClick={() => setAskPassphrase("export")}>
+            Export encrypted…
+          </button>
+        )}
         <span class="spacer" />
         {isRemembered() ? (
           <button
@@ -106,11 +97,13 @@ export function Environments() {
             Stop remembering on this device
           </button>
         ) : (
-          <button type="button" disabled={!environments.length} onClick={() => setAskPassphrase("remember")}>
-            Remember on this device…
-          </button>
+          environments.length > 0 && (
+            <button type="button" onClick={() => setAskPassphrase("remember")}>
+              Remember on this device…
+            </button>
+          )
         )}
-        <button
+        {environments.length > 0 && <button
           type="button"
           class="danger-outline"
           onClick={async () => {
@@ -121,7 +114,7 @@ export function Environments() {
           }}
         >
           Forget everything
-        </button>
+        </button>}
       </div>
       {passphrase && <p class="muted">Remembered on this device, encrypted with your passphrase.</p>}
 
@@ -156,6 +149,35 @@ export function Environments() {
         />
       )}
     </>
+  );
+}
+
+/** First visit: the two ways to look around before trusting DMM with a token, then the real thing. */
+function Welcome({ onAdd }: { onAdd: () => void }) {
+  const [busy, run] = useBusy();
+  const live = playgroundEnvironment() !== null;
+  return (
+    <div class="welcome">
+      <div class="welcome-cards">
+        {live && (
+          <button type="button" class="try-card" disabled={busy} onClick={() => run(() => tryDemo("playground"))}>
+            <span class="try-kicker">Live · read-only</span>
+            <strong>Try it on the Dynatrace Playground</strong>
+            <span>Real hosts, problems, SLOs and metrics from Dynatrace's public demo environment. Nothing can be changed.</span>
+          </button>
+        )}
+        <button type="button" class="try-card" disabled={busy} onClick={() => run(() => tryDemo("sample"))}>
+          <span class="try-kicker">Offline</span>
+          <strong>Try it with sample data</strong>
+          <span>Three invented environments answered inside this page. Every feature works, including the bulk changes. Nothing is sent anywhere.</span>
+        </button>
+        <button type="button" class="try-card primary-card" onClick={onAdd}>
+          <span class="try-kicker">Your tenants</span>
+          <strong>Add your environment</strong>
+          <span>A tenant ID or any Dynatrace URL, plus an access or platform token. It stays in this browser.</span>
+        </button>
+      </div>
+    </div>
   );
 }
 

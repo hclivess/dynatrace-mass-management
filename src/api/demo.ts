@@ -14,6 +14,18 @@ export function demoEnvironments(): Environment[] {
   ];
 }
 
+/**
+ * The live Dynatrace Playground (wkf10640), with a read-only token baked into the hosted build
+ * only. Dynatrace wipes the Playground now and then, which kills the token; callers fall back to
+ * the sample data then.
+ */
+const PLAYGROUND_TOKEN = import.meta.env.VITE_PLAYGROUND_TOKEN?.trim();
+
+export function playgroundEnvironment(): Environment | null {
+  if (!PLAYGROUND_TOKEN) return null;
+  return { id: "playground", name: "Dynatrace Playground", url: "wkf10640", token: PLAYGROUND_TOKEN, readOnly: true };
+}
+
 export function isDemo(apiRoot: string): boolean {
   return apiRoot.startsWith(DEMO_ROOT);
 }

@@ -8,7 +8,7 @@ import { Table } from "../ui/Table";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, TimeSeriesScale, Tooltip, Legend, Filler);
 
-const PALETTE = ["#0e6c70", "#c2410c", "#6d28d9", "#15803d", "#b91c1c", "#0369a1", "#a16207", "#be185d"];
+const PALETTE = ["#6c72ff", "#1fb5c9", "#f2a93b", "#e5537a", "#4fc27d", "#a36bff", "#3d8bfd", "#d9773e"];
 
 export function Metrics() {
   const { client } = useCurrent()!;

@@ -37,6 +37,7 @@ export class Http {
     readonly apiRoot: string,
     private readonly token: string,
     private readonly fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+    readonly readOnly = false,
   ) {}
 
   url(path: string, query?: Query): string {
@@ -49,6 +50,9 @@ export class Http {
 
   async request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
     const url = this.url(path, options.query);
+    if (this.readOnly && method !== "GET" && !path.endsWith("/apiTokens/lookup")) {
+      throw new ApiError("This is the public read-only demo, so changes are switched off. Add your own environment to make changes.", 0);
+    }
     for (let attempt = 0; ; attempt++) {
       const timeout = AbortSignal.timeout(TIMEOUT_MS);
       const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;

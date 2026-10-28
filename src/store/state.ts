@@ -86,11 +86,11 @@ export function isRemembered(): boolean {
 const clients = new Map<string, { key: string; client: Dynatrace }>();
 
 export function clientFor(env: Environment): Dynatrace {
-  const key = `${env.url}\n${env.token}`;
+  const key = `${env.url}\n${env.token}\n${env.readOnly ? "ro" : "rw"}`;
   const cached = clients.get(env.id);
   if (cached?.key === key) return cached.client;
   const { apiRoot } = parseEnvironmentUrl(env.url);
-  const client = new Dynatrace(apiRoot, env.token, isDemo(apiRoot) ? demoFetch : undefined);
+  const client = new Dynatrace(apiRoot, env.token, isDemo(apiRoot) ? demoFetch : undefined, env.readOnly === true);
   clients.set(env.id, { key, client });
   return client;
 }
